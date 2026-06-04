@@ -1,4 +1,4 @@
-﻿# AI Content Factory
+# AI Content Factory
 
 统一的双 Agent 内容生产系统：
 
@@ -24,12 +24,14 @@
 - `docs/AI-Content-Factory-3013-Project-Guide.md`
 - `docs/Repository-Inventory.md`
 - `docs/Multi-User-Persistence-Phase1.md`
+- `docs/Supabase-Cloud-Migration.md`
 
 包含：
 
 1. 总体架构、API、数据库、业务链路
 2. 前端组件 / 后端模块 / 仓库目录清单
 3. 多用户隔离的已确认待办规划
+4. Vercel + Supabase 云化部署方案与 Phase 1 状态
 
 ## 环境要求
 
@@ -91,6 +93,23 @@ XIAOHONGSHU_OPENAPI_BASE_URL=https://note.limyai.com/api/openapi
 CONTENT_CREATION_AGENT_DATA_ROOT=.codex-data
 ```
 
+### Vercel + Supabase 部署变量
+
+生产部署时在 Vercel Environment Variables 中额外配置：
+
+```env
+APP_DATABASE_PROVIDER=supabase
+APP_STORAGE_PROVIDER=supabase
+DATABASE_URL=postgresql://...
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=replace-with-service-role-key
+SUPABASE_STORAGE_BUCKET=acf-assets
+CRON_SECRET=replace-with-random-secret
+APP_BASE_URL=https://your-domain.example
+```
+
+完整云化步骤见：`docs/Supabase-Cloud-Migration.md`。
+
 ## 图片模型切换（设置页）
 
 在 `内容创作 > 设置` 中可切换以下 4 个模型（公众号/小红书图片链路共用）：
@@ -113,6 +132,7 @@ npm run analysis:daily
 
 - 默认：`.codex-data/`
 - 已在 `.gitignore`，不会推送敏感本地数据。
+- Vercel 生产环境不要依赖 `.codex-data`，图片和后续上传文件应走 Supabase Storage。
 
 ## 已确认待办
 
@@ -149,4 +169,3 @@ npm run analysis:daily
 1. 首图失败：优先检查 `SILICONFLOW_API_KEY` 与设置页图片模型。
 2. 批量发布失败：检查 `WECHAT_OPENAPI_KEY`。
 3. 刷新后数据丢失：检查 `.codex-data` 是否被清理，或 `CONTENT_CREATION_AGENT_DATA_ROOT` 是否变更。
-

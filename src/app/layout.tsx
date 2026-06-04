@@ -1,20 +1,9 @@
-﻿import type { Metadata } from "next";
-import { Noto_Sans_SC, Noto_Serif_SC } from "next/font/google";
+import type { Metadata } from "next";
 
 import AgentTopNav from "@/components/app-shell/agent-top-nav";
 
 import "./content-creation-globals.css";
 import "./globals.css";
-
-const sans = Noto_Sans_SC({
-  subsets: ["latin"],
-  variable: "--font-sans"
-});
-
-const serif = Noto_Serif_SC({
-  subsets: ["latin"],
-  variable: "--font-serif"
-});
 
 export const metadata: Metadata = {
   title: "Agent内容工厂",
@@ -27,7 +16,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh-CN" className={`${sans.variable} ${serif.variable}`}>
+    <html lang="zh-CN">
       <body>
         <div className="agent-shell">
           <AgentTopNav />
