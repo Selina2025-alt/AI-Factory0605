@@ -29,10 +29,12 @@ Vercel Project Settings > Environment Variables 添加：
 APP_DATABASE_PROVIDER=supabase
 APP_STORAGE_PROVIDER=supabase
 DATABASE_URL=postgresql://...
-SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=replace-with-publishable-key
 SUPABASE_SERVICE_ROLE_KEY=replace-with-service-role-key
-SUPABASE_STORAGE_BUCKET=acf-assets
+SUPABASE_STORAGE_BUCKET=assets
 CRON_SECRET=replace-with-random-secret
+ENABLE_AUTO_PUBLISH=false
 APP_BASE_URL=https://your-domain.example
 
 ACF_BOOTSTRAP_EMAIL=admin@example.com
@@ -83,14 +85,14 @@ XIAOHONGSHU_OPENAPI_BASE_URL=https://note.limyai.com/api/openapi
 
 创建 bucket：
 
-1. `acf-assets`
+1. `assets`
 2. 建议先设为 private
 3. 发布平台需要公网图片时，由 `/api/assets/...` 读取后返回，或后续升级为 signed URL
 
 当前路径设计：
 
 ```text
-acf-assets/
+assets/
   generated-assets/
     wechat/
     xiaohongshu/

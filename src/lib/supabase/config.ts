@@ -3,6 +3,7 @@ export type AppStorageProvider = "local" | "supabase";
 
 export interface SupabaseRuntimeConfig {
   url: string;
+  publishableKey: string;
   serviceRoleKey: string;
   storageBucket: string;
 }
@@ -42,9 +43,13 @@ export function getAppStorageProvider(): AppStorageProvider {
 }
 
 export function getSupabaseRuntimeConfig(): SupabaseRuntimeConfig | null {
-  const url = trimEnv("SUPABASE_URL").replace(/\/+$/, "");
+  const url = (trimEnv("SUPABASE_URL") || trimEnv("NEXT_PUBLIC_SUPABASE_URL")).replace(/\/+$/, "");
+  const publishableKey =
+    trimEnv("SUPABASE_PUBLISHABLE_KEY") ||
+    trimEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY") ||
+    trimEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
   const serviceRoleKey = trimEnv("SUPABASE_SERVICE_ROLE_KEY");
-  const storageBucket = trimEnv("SUPABASE_STORAGE_BUCKET") || "acf-assets";
+  const storageBucket = trimEnv("SUPABASE_STORAGE_BUCKET") || "assets";
 
   if (!url || !serviceRoleKey) {
     return null;
@@ -52,6 +57,7 @@ export function getSupabaseRuntimeConfig(): SupabaseRuntimeConfig | null {
 
   return {
     url,
+    publishableKey,
     serviceRoleKey,
     storageBucket
   };
@@ -62,7 +68,7 @@ export function requireSupabaseRuntimeConfig(): SupabaseRuntimeConfig {
 
   if (!config) {
     throw new Error(
-      "Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY."
+      "Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY."
     );
   }
 

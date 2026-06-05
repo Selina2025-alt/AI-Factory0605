@@ -25,6 +25,7 @@
 - `docs/Repository-Inventory.md`
 - `docs/Multi-User-Persistence-Phase1.md`
 - `docs/Supabase-Cloud-Migration.md`
+- `docs/Supabase-Postgres-Phase1.md`
 
 包含：
 
@@ -32,6 +33,7 @@
 2. 前端组件 / 后端模块 / 仓库目录清单
 3. 多用户隔离的已确认待办规划
 4. Vercel + Supabase 云化部署方案与 Phase 1 状态
+5. Supabase Postgres 建表、环境变量和测试步骤
 
 ## 环境要求
 
@@ -102,13 +104,15 @@ APP_DATABASE_PROVIDER=supabase
 APP_STORAGE_PROVIDER=supabase
 DATABASE_URL=postgresql://...
 SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=replace-with-publishable-key
 SUPABASE_SERVICE_ROLE_KEY=replace-with-service-role-key
-SUPABASE_STORAGE_BUCKET=acf-assets
+SUPABASE_STORAGE_BUCKET=assets
 CRON_SECRET=replace-with-random-secret
 APP_BASE_URL=https://your-domain.example
 ```
 
-完整云化步骤见：`docs/Supabase-Cloud-Migration.md`。
+完整云化步骤见：`docs/Supabase-Cloud-Migration.md` 和 `docs/Supabase-Postgres-Phase1.md`。
 
 ## 图片模型切换（设置页）
 

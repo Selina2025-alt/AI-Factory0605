@@ -405,6 +405,7 @@ create index if not exists library_entries_workspace_updated_idx
   on library_entries (workspace_id, updated_at desc);
 
 -- Optional Storage bucket bootstrap for generated assets.
+-- Safe to run in Supabase SQL Editor. Service-role server code can use this private bucket.
 insert into storage.buckets (id, name, public)
 values ('assets', 'assets', false)
 on conflict (id) do update set
