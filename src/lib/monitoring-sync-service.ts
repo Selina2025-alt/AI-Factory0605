@@ -131,7 +131,7 @@ export async function refreshKeywordTargetPlatform(
   const startedAt = now();
   const triggerType = input.triggerType ?? "manual_refresh";
 
-  upsertKeywordTarget(input.repository, {
+  await upsertKeywordTarget(input.repository, {
     ...input.keywordTarget,
     categoryId: input.categoryId,
     lastRunAt: input.keywordTarget.lastRunAt,
@@ -139,7 +139,7 @@ export async function refreshKeywordTargetPlatform(
       lastResultCount: input.keywordTarget.lastResultCount
   });
 
-  createSearchQuery(input.repository, {
+  await createSearchQuery(input.repository, {
     id: searchQueryId,
     categoryId: input.categoryId,
     keywordTargetId: input.keywordTarget.id,
@@ -154,7 +154,7 @@ export async function refreshKeywordTargetPlatform(
     errorMessage: null
   });
 
-  createSyncRun(input.repository, {
+  await createSyncRun(input.repository, {
     id: runId,
     categoryId: input.categoryId,
     keywordTargetId: input.keywordTarget.id,
@@ -179,7 +179,7 @@ export async function refreshKeywordTargetPlatform(
     } satisfies PlatformContentSnapshot;
     const finishedAt = now();
 
-    upsertCollectedContents(input.repository, {
+    await upsertCollectedContents(input.repository, {
       categoryId: input.categoryId,
       keywordTargetId: input.keywordTarget.id,
       platformId: input.platformId,
@@ -188,7 +188,7 @@ export async function refreshKeywordTargetPlatform(
       collectedAt: finishedAt
     });
 
-    replaceSearchQueryContents(input.repository, {
+    await replaceSearchQueryContents(input.repository, {
       searchQueryId,
       categoryId: input.categoryId,
       keywordTargetId: input.keywordTarget.id,
@@ -197,7 +197,7 @@ export async function refreshKeywordTargetPlatform(
       collectedAt: finishedAt
     });
 
-    finishSyncRun(input.repository, {
+    await finishSyncRun(input.repository, {
       id: runId,
       status: "success",
       resultCount: snapshot.cappedCount,
@@ -205,7 +205,7 @@ export async function refreshKeywordTargetPlatform(
       finishedAt
     });
 
-    finishSearchQuery(input.repository, {
+    await finishSearchQuery(input.repository, {
       id: searchQueryId,
       status: "success",
       fetchedCount: snapshot.fetchedCount,
@@ -219,7 +219,7 @@ export async function refreshKeywordTargetPlatform(
     const finishedAt = now();
     const message = error instanceof Error ? error.message : "Unknown sync error";
 
-    finishSyncRun(input.repository, {
+    await finishSyncRun(input.repository, {
       id: runId,
       status: "failed",
       resultCount: 0,
@@ -227,7 +227,7 @@ export async function refreshKeywordTargetPlatform(
       finishedAt
     });
 
-    finishSearchQuery(input.repository, {
+    await finishSearchQuery(input.repository, {
       id: searchQueryId,
       status: "failed",
       fetchedCount: 0,
@@ -240,8 +240,8 @@ export async function refreshKeywordTargetPlatform(
   }
 }
 
-export function listStoredContentForKeywordTarget(input: StoredContentQuery) {
-  return listCollectedContents(input.repository, {
+export async function listStoredContentForKeywordTarget(input: StoredContentQuery) {
+  return await listCollectedContents(input.repository, {
     categoryId: input.categoryId,
     keywordTargetId: input.keywordTargetId,
     platformId: input.platformId,

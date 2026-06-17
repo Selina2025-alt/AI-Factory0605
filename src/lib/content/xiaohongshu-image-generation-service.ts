@@ -1,4 +1,4 @@
-﻿import { persistGeneratedImage } from "@/lib/assets/generated-asset-service";
+import { persistGeneratedImage } from "@/lib/assets/generated-asset-service";
 import { resolvePlatformImageModel } from "@/lib/content/platform-image-model";
 import {
   createSiliconFlowImageGeneration,
@@ -56,7 +56,7 @@ export async function enhanceXiaohongshuImagesWithSiliconFlow(
   content: XiaohongshuContentBody
 ): Promise<XiaohongshuContentBody> {
   const ensuredContent = ensureXiaohongshuImageAssets(content);
-  const selectedImageModel = resolvePlatformImageModel("xiaohongshu");
+  const selectedImageModel = await resolvePlatformImageModel("xiaohongshu");
   const imageConfig = getSiliconFlowImageConfig(selectedImageModel);
   const localAssets = ensuredContent.imageAssets ?? [];
 
@@ -114,7 +114,7 @@ export async function regenerateXiaohongshuImageAsset(input: {
   imageId: string;
 }) {
   const ensuredContent = ensureXiaohongshuImageAssets(input.content);
-  const selectedImageModel = resolvePlatformImageModel("xiaohongshu");
+  const selectedImageModel = await resolvePlatformImageModel("xiaohongshu");
   const imageConfig = getSiliconFlowImageConfig(selectedImageModel);
 
   if (!imageConfig) {

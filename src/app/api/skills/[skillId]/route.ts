@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { rmSync } from "node:fs";
 import path from "node:path";
 
@@ -26,7 +26,7 @@ export async function GET(
   migrateDatabase();
 
   const { skillId } = await context.params;
-  const skill = getSkillById(skillId);
+  const skill = await getSkillById(skillId);
 
   if (!skill) {
     return NextResponse.json({ message: "Skill not found" }, { status: 404 });
@@ -53,7 +53,7 @@ export async function GET(
 
   return NextResponse.json({
     skill,
-    learningResult: getSkillLearningResult(skillId),
+    learningResult: await getSkillLearningResult(skillId),
     files,
     selectedFile
   });
@@ -80,13 +80,13 @@ export async function DELETE(
   migrateDatabase();
 
   const { skillId } = await context.params;
-  const skill = getSkillById(skillId);
+  const skill = await getSkillById(skillId);
 
   if (!skill) {
     return NextResponse.json({ message: "Skill not found" }, { status: 404 });
   }
 
-  deleteSkill(skillId);
+  await deleteSkill(skillId);
   removeUnpackedSkillDirectory(skillId);
 
   return NextResponse.json({ ok: true });

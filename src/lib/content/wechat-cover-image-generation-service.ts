@@ -1,4 +1,4 @@
-﻿import { persistGeneratedImage } from "@/lib/assets/generated-asset-service";
+import { persistGeneratedImage } from "@/lib/assets/generated-asset-service";
 import {
   createSiliconFlowImageGeneration,
   getSiliconFlowImageConfig
@@ -187,14 +187,14 @@ function normalizeSemanticAliases(value: string) {
     .replace(/\bapp interface\b/gi, "real scene");
 }
 
-function deriveSkillStyleDirectives(skill: SkillRow) {
+async function deriveSkillStyleDirectives(skill: SkillRow) {
   const preset = SKILL_STYLE_PRESETS[skill.id];
 
   if (preset?.length) {
     return preset;
   }
 
-  const learning = getSkillLearningResult(skill.id);
+  const learning = await getSkillLearningResult(skill.id);
   const candidates = [learning?.summary ?? skill.summary, ...(learning?.rules ?? []).slice(0, 2)]
     .map((line) => sanitizeStyleText(line))
     .filter(Boolean)
@@ -207,26 +207,25 @@ function deriveSkillStyleDirectives(skill: SkillRow) {
       ];
 }
 
-function resolveWechatCoverSkillInstructions() {
-  ensureBuiltinImageSkills();
+async function resolveWechatCoverSkillInstructions() {
+  await ensureBuiltinImageSkills();
 
-  const savedSetting = getPlatformSetting("wechat") as
+  const savedSetting = (await getPlatformSetting("wechat")) as
     | { image_skill_ids_json?: string }
     | null;
   const selectedImageSkillIds = savedSetting?.image_skill_ids_json
     ? (JSON.parse(savedSetting.image_skill_ids_json) as string[])
     : [];
 
-  const allReadyImageSkills = listSkills().filter(
+  const allReadyImageSkills = (await listSkills()).filter(
     (skill) => skill.skillKind === "image" && skill.status === "ready"
   );
-  const selectedSkills = selectedImageSkillIds
-    .map((skillId) => getSkillById(skillId))
+  const selectedSkills = (await Promise.all(selectedImageSkillIds.map((skillId) => getSkillById(skillId))))
     .filter((skill): skill is SkillRow => Boolean(skill))
     .filter((skill) => skill.skillKind === "image" && skill.status === "ready");
   const defaultSkill =
-    getSkillById(DEFAULT_WECHAT_COVER_SKILL_ID) ??
-    getSkillById(WECHAT_COVER_FALLBACK_SKILL_ID) ??
+    (await getSkillById(DEFAULT_WECHAT_COVER_SKILL_ID)) ??
+    (await getSkillById(WECHAT_COVER_FALLBACK_SKILL_ID)) ??
     allReadyImageSkills[0] ??
     null;
   const activeSkills = selectedSkills.length > 0 ? selectedSkills : defaultSkill ? [defaultSkill] : [];
@@ -235,11 +234,11 @@ function resolveWechatCoverSkillInstructions() {
     return "";
   }
 
-  const styleLines = activeSkills.flatMap((skill, index) => {
-    const rules = deriveSkillStyleDirectives(skill);
+  const styleLines = (await Promise.all(activeSkills.map(async (skill, index) => {
+    const rules = await deriveSkillStyleDirectives(skill);
 
     return [`style channel ${index + 1}:`, ...rules.map((rule) => `- ${rule}`)];
-  });
+  }))).flat();
 
   return [
     "Article hero-cover style constraints (design guidance only, never render these words into the final image):",
@@ -297,7 +296,9 @@ async function generateCoverWithCleanup(input: {
   } catch {
     try {
       return await createSiliconFlowImageGeneration({
-        prompt: `${input.prompt}\n\n${cleanupPrompt}`,
+        prompt: `${input.prompt}
+
+${cleanupPrompt}`,
         imageSize,
         model: input.model
       });
@@ -311,9 +312,9 @@ export async function generateWechatCoverImage(input: {
   content: WechatContentBody;
   candidateId?: string;
 }) {
-  const skillInstruction = resolveWechatCoverSkillInstructions();
+  const skillInstruction = await resolveWechatCoverSkillInstructions();
   const ensuredContent = ensureWechatCoverImagePlan(input.content);
-  const selectedImageModel = resolvePlatformImageModel("wechat");
+  const selectedImageModel = await resolvePlatformImageModel("wechat");
   const imageConfig = getSiliconFlowImageConfig(selectedImageModel);
 
   if (!imageConfig) {
@@ -330,7 +331,9 @@ export async function generateWechatCoverImage(input: {
   }
 
   const promptDraft = skillInstruction
-    ? `${skillInstruction}\n\n${candidate.prompt}`
+    ? `${skillInstruction}
+
+${candidate.prompt}`
     : candidate.prompt;
   const prompt = normalizeSemanticAliases(scrubPlatformNoise(promptDraft));
   const generatedSrc = await generateCoverWithCleanup({
@@ -372,4 +375,3 @@ export async function generateWechatCoverImage(input: {
     coverImageAsset: nextCoverImageAsset
   };
 }
-

@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+﻿import { randomUUID } from "node:crypto";
 
 import { after, NextResponse } from "next/server";
 
@@ -95,7 +95,7 @@ async function createWechatTaskFromTopic(input: {
   const taskId = randomUUID();
   const prompt = buildTopicPrompt(input.entry);
   const platforms = ["wechat"] as const;
-  const generationContext = resolveGenerationContext([...platforms]);
+  const generationContext = await resolveGenerationContext([...platforms]);
   const webSearch = await searchWebForContent({
     enabled: input.enableWebSearch,
     prompt
@@ -108,7 +108,7 @@ async function createWechatTaskFromTopic(input: {
     enableXiaohongshuImageGeneration: false,
     webSearchResults: webSearch.results
   });
-  const generationTrace = buildTaskGenerationTrace({
+  const generationTrace = await buildTaskGenerationTrace({
     prompt,
     platforms: [...platforms],
     skills: generationContext.skillSnapshots,
@@ -116,15 +116,15 @@ async function createWechatTaskFromTopic(input: {
   });
   const title = bundle.wechat?.title ?? input.entry.title.slice(0, 24);
 
-  createTask({
+  await createTask({
     id: taskId,
     title,
     userInput: prompt,
     selectedPlatforms: [...platforms],
     status: "ready"
   });
-  createTaskContents(taskId, bundle);
-  createHistoryAction({
+  await createTaskContents(taskId, bundle);
+  await createHistoryAction({
     taskId,
     actionType: "task_created",
     payload: {
@@ -146,13 +146,13 @@ async function createWechatTaskFromTopic(input: {
         content: bundle.wechat
       });
 
-      updateTaskPlatformContent({
+      await updateTaskPlatformContent({
         taskId,
         platform: "wechat",
         title: coverResult.content.title,
         body: coverResult.content
       });
-      createHistoryAction({
+      await createHistoryAction({
         taskId,
         actionType: "wechat_cover_generated",
         payload: {
@@ -193,7 +193,7 @@ async function processTopicGenerationInBackground(input: {
 
     const repository = createMonitoringRepository();
     try {
-      updateTopicLibraryEntryGenerationResult(repository, {
+      await updateTopicLibraryEntryGenerationResult(repository, {
         id: input.entry.id,
         generationStatus: "generated",
         coverStatus: created.coverStatus,
@@ -205,7 +205,7 @@ async function processTopicGenerationInBackground(input: {
       repository.database.close();
     }
 
-    upsertGeneratedDraft({
+    await upsertGeneratedDraft({
       id: buildTopicDraftId(input.entry.id),
       title: created.title,
       prompt: created.prompt,
@@ -215,11 +215,11 @@ async function processTopicGenerationInBackground(input: {
     });
   } catch (error) {
     const errorMessage =
-      error instanceof Error ? error.message : "批量生成失败";
+      error instanceof Error ? error.message : "鎵归噺鐢熸垚澶辫触";
     const repository = createMonitoringRepository();
 
     try {
-      updateTopicLibraryEntryGenerationResult(repository, {
+      await updateTopicLibraryEntryGenerationResult(repository, {
         id: input.entry.id,
         generationStatus: "failed",
         coverStatus: "failed",
@@ -230,7 +230,7 @@ async function processTopicGenerationInBackground(input: {
       repository.database.close();
     }
 
-    upsertGeneratedDraft({
+    await upsertGeneratedDraft({
       id: buildTopicDraftId(input.entry.id),
       title: input.entry.title,
       prompt: buildTopicPrompt(input.entry),
@@ -265,8 +265,8 @@ export async function POST(request: Request) {
     const enableWebSearch = body.enableWebSearch ?? true;
     const targetEntries =
       body.entryIds && body.entryIds.length > 0
-        ? getTopicLibraryEntriesByIds(repository, body.entryIds)
-        : listTopicLibraryEntries(repository, { selectedOnly: true });
+        ? await getTopicLibraryEntriesByIds(repository, body.entryIds)
+        : await listTopicLibraryEntries(repository, { selectedOnly: true });
     const entries = targetEntries.filter((entry) => !entry.isDeleted);
 
     if (entries.length === 0) {
@@ -280,7 +280,7 @@ export async function POST(request: Request) {
     }
 
     for (const entry of entries) {
-      updateTopicLibraryEntryGenerationResult(repository, {
+      await updateTopicLibraryEntryGenerationResult(repository, {
         id: entry.id,
         generationStatus: "generating",
         coverStatus: "idle",
@@ -288,7 +288,7 @@ export async function POST(request: Request) {
         lastErrorMessage: null
       });
 
-      upsertGeneratedDraft({
+      await upsertGeneratedDraft({
         id: buildTopicDraftId(entry.id),
         title: entry.title,
         prompt: buildTopicPrompt(entry),
@@ -323,7 +323,7 @@ export async function POST(request: Request) {
         failedCount: 0,
         coverGeneratedCount: 0,
         coverFailedCount: 0,
-        message: `已开始后台批量生成（${entries.length} 个选题）。可前往内容创作工作台在需求草稿箱查看“生成中”状态。`,
+        message: `已开始后台批量生成（${entries.length} 个选题）。可前往内容创作工作台，在需求草稿箱查看“生成中”状态。`,
         results: queuedResults
       },
       { status: 202 }

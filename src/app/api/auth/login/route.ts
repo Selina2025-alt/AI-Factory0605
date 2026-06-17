@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
   const repository = createMonitoringRepository();
 
   try {
-    ensureAuthBootstrap(repository);
+    await ensureAuthBootstrap(repository);
 
     const body = (await request.json()) as LoginRequestBody;
     const email = body.email?.trim() ?? "";
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const user = authenticateUser(repository, email, password);
+    const user = await authenticateUser(repository, email, password);
 
     if (!user) {
       return NextResponse.json(
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const session = createAuthSession(repository, {
+    const session = await createAuthSession(repository, {
       userId: user.id,
       workspaceId: user.workspaceId
     });

@@ -1,12 +1,12 @@
-import { parseSkillMarkdown } from "@/lib/skills/skill-parser";
+﻿import { parseSkillMarkdown } from "@/lib/skills/skill-parser";
 
 const capabilityHeadingPatterns = [
-  /能力/,
-  /触发条件/,
-  /工作流程/,
-  /使用方式/,
-  /输出标准/,
-  /必须做到/,
+  /鑳藉姏/,
+  /瑙﹀彂鏉′欢/,
+  /宸ヤ綔娴佺▼/,
+  /浣跨敤鏂瑰紡/,
+  /杈撳嚭鏍囧噯/,
+  /蹇呴』鍋氬埌/,
   /when to use/i,
   /workflow/i,
   /capabilities/i,
@@ -29,7 +29,7 @@ function extractCapabilityRules(markdown: string) {
     }
 
     const markdownHeading = line.match(/^#{1,6}\s+(.+)$/);
-    const colonHeading = line.match(/^(.+?)[：:]$/);
+    const colonHeading = line.match(/^(.+?)[锛?]$/);
     const headingText = markdownHeading?.[1] ?? colonHeading?.[1] ?? null;
 
     if (headingText) {
@@ -56,19 +56,19 @@ function extractCapabilityRules(markdown: string) {
 function inferPlatformHints(markdown: string) {
   const hints = new Set<string>();
 
-  if (/公众号|微信|wechat|weixin/i.test(markdown)) {
+  if (/鍏紬鍙穦寰俊|wechat|weixin/i.test(markdown)) {
     hints.add("wechat");
   }
 
-  if (/小红书|xiaohongshu|rednote/i.test(markdown)) {
+  if (/灏忕孩涔xiaohongshu|rednote/i.test(markdown)) {
     hints.add("xiaohongshu");
   }
 
-  if (/twitter|tweet|thread|推文|x\.com/i.test(markdown)) {
+  if (/twitter|tweet|thread|鎺ㄦ枃|x\.com/i.test(markdown)) {
     hints.add("twitter");
   }
 
-  if (/视频|分镜|脚本|video|script/i.test(markdown)) {
+  if (/瑙嗛|鍒嗛暅|鑴氭湰|video|script/i.test(markdown)) {
     hints.add("videoScript");
   }
 
@@ -87,13 +87,13 @@ function extractKeywords(markdown: string, title: string, description: string) {
     "公众号",
     "小红书",
     "Twitter",
-    "视频",
-    "长文",
-    "写作",
-    "选题",
-    "审校",
-    "风格",
-    "内容创作"
+    "瑙嗛",
+    "闀挎枃",
+    "鍐欎綔",
+    "閫夐",
+    "瀹℃牎",
+    "椋庢牸",
+    "鍐呭鍒涗綔"
   ]) {
     if (markdown.includes(keyword)) {
       keywords.add(keyword);

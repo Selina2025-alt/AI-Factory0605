@@ -729,8 +729,8 @@ async function publishInMockMode(input: {
   platform: Exclude<PlatformId, "videoScript">;
 }) {
   const result = await mockPublishContent();
-  updatePublishStatus(input.taskId, input.platform, result.status);
-  createHistoryAction({
+  await updatePublishStatus(input.taskId, input.platform, result.status);
+  await createHistoryAction({
     taskId: input.taskId,
     actionType: `${input.platform}_published`,
     payload: {
@@ -750,7 +750,7 @@ export async function POST(
   migrateDatabase();
 
   const { taskId } = await context.params;
-  const task = getTaskById(taskId);
+  const task = await getTaskById(taskId);
 
   if (!task) {
     return NextResponse.json({ message: "Task not found" }, { status: 404 });
@@ -792,10 +792,10 @@ export async function POST(
     }
 
     try {
-      const bundle = getTaskBundle(taskId);
+      const bundle = await getTaskBundle(taskId);
       const publishInput = buildWechatPublishInput({ body, bundle });
 
-      updatePublishStatus(taskId, "wechat", "publishing");
+      await updatePublishStatus(taskId, "wechat", "publishing");
       let result: Awaited<ReturnType<typeof publishWechatArticle>>;
       let usedSanitizedRetry = false;
 
@@ -818,8 +818,8 @@ export async function POST(
         }
       }
 
-      updatePublishStatus(taskId, "wechat", result.status);
-      createHistoryAction({
+      await updatePublishStatus(taskId, "wechat", result.status);
+      await createHistoryAction({
         taskId,
         actionType: "wechat_published",
         payload: {
@@ -836,7 +836,7 @@ export async function POST(
       return NextResponse.json(result);
     } catch (error) {
       if (!(error instanceof PublishValidationError)) {
-        updatePublishStatus(taskId, "wechat", "failed");
+        await updatePublishStatus(taskId, "wechat", "failed");
       }
 
       if (error instanceof PublishValidationError) {
@@ -880,14 +880,14 @@ export async function POST(
     }
 
     try {
-      const bundle = getTaskBundle(taskId);
+      const bundle = await getTaskBundle(taskId);
       const publishInput = buildXiaohongshuPublishInput(bundle);
       await validateXiaohongshuPublishInput(publishInput);
 
-      updatePublishStatus(taskId, "xiaohongshu", "publishing");
+      await updatePublishStatus(taskId, "xiaohongshu", "publishing");
       const result = await publishXiaohongshuNote(publishInput);
-      updatePublishStatus(taskId, "xiaohongshu", result.status);
-      createHistoryAction({
+      await updatePublishStatus(taskId, "xiaohongshu", result.status);
+      await createHistoryAction({
         taskId,
         actionType: "xiaohongshu_published",
         payload: {
@@ -903,7 +903,7 @@ export async function POST(
       return NextResponse.json(result);
     } catch (error) {
       if (!(error instanceof PublishValidationError)) {
-        updatePublishStatus(taskId, "xiaohongshu", "failed");
+        await updatePublishStatus(taskId, "xiaohongshu", "failed");
       }
 
       if (error instanceof PublishValidationError) {

@@ -2,6 +2,7 @@
 
 import { NextResponse } from "next/server";
 
+import type { PlatformId, SkillKind } from "@/lib/content-creation-types";
 import { migrateDatabase } from "@/lib/db/migrate";
 import {
   createSkill,
@@ -9,7 +10,6 @@ import {
   getSkillLearningResult,
   saveSkillLearningResult
 } from "@/lib/db/repositories/skill-repository";
-import type { PlatformId, SkillKind } from "@/lib/content-creation-types";
 
 export const runtime = "nodejs";
 
@@ -80,7 +80,7 @@ export async function POST(request: Request) {
       ? (["xiaohongshu"] satisfies PlatformId[])
       : normalizePlatformHints(body.platformHints);
 
-  createSkill({
+  await createSkill({
     id: skillId,
     name,
     sourceType: "prompt",
@@ -89,7 +89,7 @@ export async function POST(request: Request) {
     status: "ready",
     skillKind
   });
-  saveSkillLearningResult(skillId, {
+  await saveSkillLearningResult(skillId, {
     summary,
     rules: [instruction],
     platformHints,
@@ -99,10 +99,9 @@ export async function POST(request: Request) {
 
   return NextResponse.json(
     {
-      skill: getSkillById(skillId),
-      learningResult: getSkillLearningResult(skillId)
+      skill: await getSkillById(skillId),
+      learningResult: await getSkillLearningResult(skillId)
     },
     { status: 201 }
   );
 }
-

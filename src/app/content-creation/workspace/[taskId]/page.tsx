@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+﻿import { notFound } from "next/navigation";
 
 import { WorkspaceShell } from "@/components/workspace/workspace-shell";
 import { getTaskGenerationTrace } from "@/lib/content/task-generation-trace";
@@ -15,22 +15,24 @@ export default async function WorkspacePage(props: {
   migrateDatabase();
 
   const { taskId } = await props.params;
-  const task = getTaskById(taskId);
+  const task = await getTaskById(taskId);
 
   if (!task) {
     notFound();
   }
 
+  const history = await listTasks();
+
   return (
     <WorkspaceShell
-      initialBundle={getTaskBundle(taskId)}
-      initialHistory={listTasks().map((item) => ({
+      initialBundle={await getTaskBundle(taskId)}
+      initialHistory={history.map((item) => ({
         id: item.id,
         title: item.title,
         updatedAt: item.updatedAt
       }))}
-      initialIsInLibrary={Boolean(getLibraryEntry(taskId))}
-      initialTrace={getTaskGenerationTrace(taskId)}
+      initialIsInLibrary={Boolean(await getLibraryEntry(taskId))}
+      initialTrace={await getTaskGenerationTrace(taskId)}
       initialTask={task}
       initialTaskId={taskId}
     />

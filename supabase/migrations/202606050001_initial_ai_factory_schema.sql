@@ -116,7 +116,7 @@ create table if not exists collected_contents (
   comment_count integer,
   article_url text,
   avatar text,
-  is_original boolean,
+  is_original integer,
   keyword text,
   raw_order_index integer,
   source_payload jsonb,
@@ -164,7 +164,7 @@ create table if not exists search_query_contents (
   comment_count integer,
   article_url text,
   avatar text,
-  is_original boolean,
+  is_original integer,
   keyword text,
   raw_order_index integer,
   source_payload jsonb,
@@ -209,7 +209,7 @@ create index if not exists analysis_topics_lookup_idx
 create table if not exists analysis_settings (
   workspace_id text not null default 'default-workspace',
   singleton_key text not null,
-  enabled boolean not null,
+  enabled integer not null,
   time text not null,
   provider text not null,
   model text not null,
@@ -252,8 +252,8 @@ create table if not exists topic_library_entries (
   hook text not null,
   growth text not null,
   support_content_ids_json jsonb not null,
-  selected boolean not null default true,
-  is_deleted boolean not null default false,
+  selected integer not null default 1,
+  is_deleted integer not null default 0,
   generation_status text not null default 'idle',
   cover_status text not null default 'idle',
   generated_task_id text,
@@ -375,7 +375,7 @@ create table if not exists skill_bindings (
   workspace_id text not null default 'default-workspace',
   platform text not null,
   skill_id text not null,
-  enabled boolean not null,
+  enabled integer not null,
   created_at timestamptz not null
 );
 

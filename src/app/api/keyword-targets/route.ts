@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
   const repository = createMonitoringRepository();
 
   try {
-    const keywordTargets = listKeywordTargets(repository, categoryId);
+    const keywordTargets = await listKeywordTargets(repository, categoryId);
 
     return NextResponse.json({
       keywordTargets

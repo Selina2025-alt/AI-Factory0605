@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
   const repository = createMonitoringRepository();
 
   try {
-    const items = listStoredContentForKeywordTarget({
+    const items = await listStoredContentForKeywordTarget({
       repository,
       categoryId,
       keywordTargetId,

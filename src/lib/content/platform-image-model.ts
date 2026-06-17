@@ -1,13 +1,13 @@
-import type { PlatformId } from "@/lib/content-creation-types";
+﻿import type { PlatformId } from "@/lib/content-creation-types";
 import {
   DEFAULT_SILICONFLOW_IMAGE_MODEL,
   normalizeSiliconFlowImageModel
 } from "@/lib/content/siliconflow-image-models";
 import { getPlatformSetting } from "@/lib/db/repositories/platform-settings-repository";
 
-export function resolvePlatformImageModel(platformId: PlatformId) {
+export async function resolvePlatformImageModel(platformId: PlatformId) {
   try {
-    const savedSetting = getPlatformSetting(platformId) as
+    const savedSetting = (await getPlatformSetting(platformId)) as
       | {
           image_model?: string;
         }

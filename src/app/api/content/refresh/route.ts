@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
   const repository = createMonitoringRepository();
 
   try {
-    const persistedKeywordTarget = getKeywordTargetById(repository, categoryId, keywordTargetId);
+    const persistedKeywordTarget = await getKeywordTargetById(repository, categoryId, keywordTargetId);
     const fallbackKeywordTarget: PersistedKeywordTarget = {
       id: keywordTargetId,
       categoryId,
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
 
     const freshReport = buildFreshAnalysisReport(keyword, snapshot.items, new Date());
 
-    upsertAnalysisSnapshot(
+    await upsertAnalysisSnapshot(
       repository,
       buildAnalysisArchiveSnapshot({
         searchQueryId: snapshot.searchQueryId,

@@ -17,7 +17,7 @@ export async function POST(
   migrateDatabase();
 
   const { taskId, imageId } = await context.params;
-  const bundle = getTaskBundle(taskId);
+  const bundle = await getTaskBundle(taskId);
 
   if (!bundle.xiaohongshu) {
     return NextResponse.json(
@@ -32,7 +32,7 @@ export async function POST(
       imageId
     });
 
-    updateTaskPlatformContent({
+    await updateTaskPlatformContent({
       taskId,
       platform: "xiaohongshu",
       title: result.content.title,

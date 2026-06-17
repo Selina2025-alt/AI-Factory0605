@@ -14,7 +14,7 @@ export const runtime = "nodejs";
 export async function GET() {
   migrateDatabase();
 
-  return NextResponse.json(listDrafts());
+  return NextResponse.json(await listDrafts());
 }
 
 export async function POST(request: Request) {
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
   const draftId = randomUUID();
   const title = body.title?.trim() || body.prompt.trim().slice(0, 24) || "未命名草稿";
 
-  createDraft({
+  await createDraft({
     id: draftId,
     title,
     prompt: body.prompt,
@@ -37,8 +37,7 @@ export async function POST(request: Request) {
     status: "draft"
   });
 
-  return NextResponse.json(listDrafts().find((draft) => draft.id === draftId), {
+  return NextResponse.json((await listDrafts()).find((draft) => draft.id === draftId), {
     status: 201
   });
 }
-

@@ -1,5 +1,6 @@
 ﻿import { NextResponse } from "next/server";
 
+import type { SkillKind } from "@/lib/content-creation-types";
 import { migrateDatabase } from "@/lib/db/migrate";
 import {
   createSkill,
@@ -8,7 +9,6 @@ import {
   saveSkillLearningResult
 } from "@/lib/db/repositories/skill-repository";
 import { installSkillFromGithub } from "@/lib/skills/github-skill-install-service";
-import type { SkillKind } from "@/lib/content-creation-types";
 
 export const runtime = "nodejs";
 
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
           }
     );
 
-    createSkill({
+    await createSkill({
       id: result.id,
       name: result.name,
       sourceType: "github",
@@ -51,10 +51,10 @@ export async function POST(request: Request) {
       status: "ready",
       skillKind
     });
-    saveSkillLearningResult(result.id, result.learningResult);
+    await saveSkillLearningResult(result.id, result.learningResult);
 
-    const skill = getSkillById(result.id);
-    const learningResult = getSkillLearningResult(result.id);
+    const skill = await getSkillById(result.id);
+    const learningResult = await getSkillLearningResult(result.id);
 
     if (!skill || !learningResult) {
       return NextResponse.json(
@@ -71,4 +71,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ message }, { status: 400 });
   }
 }
-

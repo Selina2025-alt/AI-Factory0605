@@ -11,9 +11,9 @@ import type {
   WechatLibraryPayload
 } from "@/lib/content-creation-types";
 
-export function getWechatLibraryItem(taskId: string): WechatLibraryItem | null {
-  const task = getTaskById(taskId);
-  const bundle = getTaskBundle(taskId);
+export async function getWechatLibraryItem(taskId: string): Promise<WechatLibraryItem | null> {
+  const task = await getTaskById(taskId);
+  const bundle = await getTaskBundle(taskId);
 
   if (!task || !bundle.wechat) {
     return null;
@@ -29,21 +29,22 @@ export function getWechatLibraryItem(taskId: string): WechatLibraryItem | null {
   };
 }
 
-export function getWechatLibraryPayload(): WechatLibraryPayload {
-  const items = listLibraryEntries("wechat")
-    .map((entry) => getWechatLibraryItem(entry.taskId))
-    .filter(Boolean) as WechatLibraryItem[];
+export async function getWechatLibraryPayload(): Promise<WechatLibraryPayload> {
+  const entries = await listLibraryEntries("wechat");
+  const items = (
+    await Promise.all(entries.map((entry) => getWechatLibraryItem(entry.taskId)))
+  ).filter(Boolean) as WechatLibraryItem[];
 
   return {
     items,
-    recentActions: listHistoryActions().slice(0, 12)
+    recentActions: (await listHistoryActions()).slice(0, 12)
   };
 }
 
-export function getWechatLibraryDetail(taskId: string): WechatLibraryDetail | null {
-  const libraryEntry = getLibraryEntry(taskId);
-  const task = getTaskById(taskId);
-  const bundle = getTaskBundle(taskId);
+export async function getWechatLibraryDetail(taskId: string): Promise<WechatLibraryDetail | null> {
+  const libraryEntry = await getLibraryEntry(taskId);
+  const task = await getTaskById(taskId);
+  const bundle = await getTaskBundle(taskId);
 
   if (!libraryEntry || libraryEntry.platform !== "wechat" || !task || !bundle.wechat) {
     return null;
@@ -59,4 +60,3 @@ export function getWechatLibraryDetail(taskId: string): WechatLibraryDetail | nu
     updatedAt: task.updatedAt
   };
 }
-

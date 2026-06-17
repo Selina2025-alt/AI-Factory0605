@@ -101,7 +101,7 @@ export async function GET(request: Request) {
   const repository = createMonitoringRepository();
 
   try {
-    const items = listTopicLibraryEntries(repository, {
+    const items = await listTopicLibraryEntries(repository, {
       includeDeleted,
       selectedOnly
     });
@@ -133,7 +133,7 @@ export async function POST(request: Request) {
     }
 
     for (const topic of topics) {
-      upsertTopicLibraryEntry(repository, {
+      await upsertTopicLibraryEntry(repository, {
         id: `topic-library:${topic.id}`,
         sourceTopicId: topic.id,
         sourceSnapshotId: body.sourceSnapshotId ?? null,
@@ -157,7 +157,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({
-      items: listTopicLibraryEntries(repository),
+      items: await listTopicLibraryEntries(repository),
       upsertedCount: topics.length
     });
   } finally {
@@ -182,18 +182,17 @@ export async function PATCH(request: Request) {
     }
 
     if (typeof body.selected === "boolean") {
-      updateTopicLibrarySelection(repository, ids, body.selected);
+      await updateTopicLibrarySelection(repository, ids, body.selected);
     }
 
     if (typeof body.isDeleted === "boolean") {
-      softDeleteTopicLibraryEntries(repository, ids, body.isDeleted);
+      await softDeleteTopicLibraryEntries(repository, ids, body.isDeleted);
     }
 
     return NextResponse.json({
-      items: listTopicLibraryEntries(repository)
+      items: await listTopicLibraryEntries(repository)
     });
   } finally {
     repository.database.close();
   }
 }
-

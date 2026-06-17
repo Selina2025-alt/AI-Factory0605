@@ -143,15 +143,15 @@ export async function GET(request: NextRequest) {
   const repository = createMonitoringRepository();
 
   try {
-    const authContext = resolveAuthRequestContext(repository, request);
+    const authContext = await resolveAuthRequestContext(repository, request);
 
     if (!authContext) {
       return NextResponse.json({ error: "authentication required", categories: [] }, { status: 401 });
     }
 
     const workspaceId = authContext.user.workspaceId;
-    const categories = listMonitorCategories(repository, workspaceId);
-    const creators = listMonitorCategoryCreators(repository, workspaceId);
+    const categories = await listMonitorCategories(repository, workspaceId);
+    const creators = await listMonitorCategoryCreators(repository, workspaceId);
     const creatorsByCategoryId = creators.reduce<Record<string, typeof creators>>((result, creator) => {
       const group = result[creator.categoryId] ?? [];
       group.push(creator);
@@ -192,7 +192,7 @@ export async function POST(request: NextRequest) {
   const repository = createMonitoringRepository();
 
   try {
-    const authContext = resolveAuthRequestContext(repository, request);
+    const authContext = await resolveAuthRequestContext(repository, request);
 
     if (!authContext) {
       return NextResponse.json({ error: "authentication required" }, { status: 401 });
@@ -202,7 +202,7 @@ export async function POST(request: NextRequest) {
     const body = (await request.json()) as ReplaceCategoriesBody;
     const normalizedCategories = normalizeCategoriesPayload(body.categories ?? [], workspaceId);
 
-    replaceMonitorCategoriesSnapshot(repository, {
+    await replaceMonitorCategoriesSnapshot(repository, {
       workspaceId,
       categories: normalizedCategories.map((item) => ({
         id: item.id,

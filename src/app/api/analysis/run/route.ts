@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
   const repository = createMonitoringRepository();
 
   try {
-    const persistedKeywordTarget = getKeywordTargetById(repository, categoryId, keywordTargetId);
+    const persistedKeywordTarget = await getKeywordTargetById(repository, categoryId, keywordTargetId);
     const fallbackKeywordTarget: PersistedKeywordTarget = {
       id: keywordTargetId,
       categoryId,

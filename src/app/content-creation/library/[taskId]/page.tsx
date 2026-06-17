@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+﻿import { notFound } from "next/navigation";
 
 import { WechatArticleDetail } from "@/components/library/wechat-article-detail";
 import { migrateDatabase } from "@/lib/db/migrate";
@@ -10,7 +10,7 @@ export default async function LibraryArticleDetailPage(props: {
   migrateDatabase();
 
   const { taskId } = await props.params;
-  const detail = getWechatLibraryDetail(taskId);
+  const detail = await getWechatLibraryDetail(taskId);
 
   if (!detail) {
     notFound();

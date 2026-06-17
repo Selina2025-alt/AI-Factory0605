@@ -1,4 +1,4 @@
-﻿import {
+import {
   getSiliconFlowConfig,
   getSiliconFlowImageConfig
 } from "@/lib/content/siliconflow-client";
@@ -37,15 +37,15 @@ function usesEfficiencyFixture(prompt: string, platforms: PlatformId[]) {
   );
 }
 
-export function buildTaskGenerationTrace(input: {
+export async function buildTaskGenerationTrace(input: {
   prompt: string;
   platforms: PlatformId[];
   skills: GenerationTraceSkill[];
   webSearch?: WebSearchTrace;
-}): TaskGenerationTrace {
+}): Promise<TaskGenerationTrace> {
   const siliconFlowConfig = getSiliconFlowConfig();
   const siliconFlowImageConfig = input.platforms.includes("xiaohongshu")
-    ? getSiliconFlowImageConfig(resolvePlatformImageModel("xiaohongshu"))
+    ? getSiliconFlowImageConfig(await resolvePlatformImageModel("xiaohongshu"))
     : getSiliconFlowImageConfig();
   const modelBackedPlatforms = input.platforms.filter(
     (platform) =>
@@ -238,8 +238,8 @@ export function buildTaskGenerationTrace(input: {
   };
 }
 
-export function getTaskGenerationTrace(taskId: string): TaskGenerationTrace | null {
-  const generationAction = listHistoryActions().find(
+export async function getTaskGenerationTrace(taskId: string): Promise<TaskGenerationTrace | null> {
+  const generationAction = (await listHistoryActions()).find(
     (action) =>
       action.taskId === taskId &&
       (action.actionType === "task_regenerated" ||
@@ -258,7 +258,3 @@ export function getTaskGenerationTrace(taskId: string): TaskGenerationTrace | nu
 
   return rawTrace as TaskGenerationTrace;
 }
-
-
-
-

@@ -9,7 +9,7 @@ export async function GET(request: Request) {
   const repository = createMonitoringRepository();
 
   try {
-    const queries = listSearchQueries(repository, categoryId || undefined);
+    const queries = await listSearchQueries(repository, categoryId || undefined);
 
     return NextResponse.json({ queries });
   } finally {

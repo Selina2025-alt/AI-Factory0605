@@ -28,7 +28,7 @@ export async function runDailyAnalysis(): Promise<DailyAnalysisRunResult> {
   const items: DailyAnalysisRunItem[] = [];
 
   try {
-    const settings = getGlobalAnalysisSettings(repository);
+    const settings = await getGlobalAnalysisSettings(repository);
 
     if (!settings.enabled) {
       return {
@@ -42,7 +42,7 @@ export async function runDailyAnalysis(): Promise<DailyAnalysisRunResult> {
       };
     }
 
-    const keywordTargets = listAllKeywordTargets(repository);
+    const keywordTargets = await listAllKeywordTargets(repository);
 
     for (const keywordTarget of keywordTargets) {
       const platformIds = keywordTarget.platformIds.filter(

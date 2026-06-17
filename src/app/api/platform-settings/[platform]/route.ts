@@ -1,15 +1,15 @@
 ﻿import { NextResponse } from "next/server";
 
-import { migrateDatabase } from "@/lib/db/migrate";
-import {
-  getPlatformSetting,
-  upsertPlatformSetting
-} from "@/lib/db/repositories/platform-settings-repository";
 import {
   isSupportedSiliconFlowImageModel,
   normalizeSiliconFlowImageModel
 } from "@/lib/content/siliconflow-image-models";
 import type { PlatformId } from "@/lib/content-creation-types";
+import { migrateDatabase } from "@/lib/db/migrate";
+import {
+  getPlatformSetting,
+  upsertPlatformSetting
+} from "@/lib/db/repositories/platform-settings-repository";
 
 export const runtime = "nodejs";
 
@@ -32,7 +32,7 @@ export async function GET(
     return NextResponse.json({ message: "Unsupported platform" }, { status: 400 });
   }
 
-  return NextResponse.json(getPlatformSetting(platform as PlatformId));
+  return NextResponse.json(await getPlatformSetting(platform as PlatformId));
 }
 
 export async function PATCH(
@@ -53,17 +53,14 @@ export async function PATCH(
     return NextResponse.json({ message: "Unsupported platform" }, { status: 400 });
   }
 
-  if (
-    body.imageModel &&
-    !isSupportedSiliconFlowImageModel(body.imageModel)
-  ) {
+  if (body.imageModel && !isSupportedSiliconFlowImageModel(body.imageModel)) {
     return NextResponse.json(
       { message: "Unsupported image model" },
       { status: 400 }
     );
   }
 
-  upsertPlatformSetting({
+  await upsertPlatformSetting({
     platform: platform as PlatformId,
     baseRulesJson: JSON.stringify(body.baseRules ?? []),
     enabledSkillIdsJson: JSON.stringify(body.enabledSkillIds ?? []),
@@ -75,4 +72,3 @@ export async function PATCH(
 
   return NextResponse.json({ ok: true });
 }
-

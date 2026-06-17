@@ -1,85 +1,107 @@
-# Supabase Postgres Phase 1
+﻿# Supabase Postgres Phase 1
 
-本文档对应数据库云化第一阶段：梳理当前 SQLite 结构，生成 Supabase Postgres migration，并准备 Vercel 生产环境变量。
+This document tracks the first cloudization phase for AI Content Factory: production database runtime can use Supabase Postgres while local development can continue using SQLite.
 
-## 当前 SQLite 读写入口
+## Status
 
-### 监控与选题分析库
+Completed in this phase:
 
-主文件：
+1. Preserved the original SQLite implementation for local development.
+2. Added Supabase Postgres table schema and migration SQL.
+3. Added a Supabase REST/Data API client for server-side runtime access.
+4. Added Supabase implementations for monitoring, topic library, analysis settings, auth sessions, drafts, tasks, generated content, library entries, platform settings and skills.
+5. Updated API routes and server services to await repository calls when production uses Supabase.
+6. Kept existing SQLite files and local data directories untouched.
+7. Verified production build with `npm run build`.
 
-```text
-src/lib/db/database.ts
-src/lib/db/schema.ts
-src/lib/db/monitoring-repository.ts
+Not completed in this phase:
+
+1. Full public self-registration.
+2. Per-user encrypted API-key storage in database.
+3. Complete migration of every local generated asset to Supabase Storage.
+4. Long-running background job queue beyond current Vercel-compatible API/Cron structure.
+
+## Runtime Switch
+
+Local development can stay on SQLite:
+
+```env
+APP_DATABASE_PROVIDER=sqlite
+APP_STORAGE_PROVIDER=local
 ```
 
-覆盖数据：
+Production should use Supabase:
 
-1. 登录用户、工作空间、会话
-2. 监控分类、对标账号
-3. 关键词监控目标
-4. 采集同步记录
-5. 采集内容快照
-6. 搜索历史
-7. 选题分析快照、选题结果、证据项
-8. 选题库汇总
+```env
+APP_DATABASE_PROVIDER=supabase
+APP_STORAGE_PROVIDER=supabase
+```
 
-### 内容创作库
-
-主文件：
+The runtime switch is implemented in:
 
 ```text
-src/lib/db/client.ts
-src/lib/db/content-creation-schema.ts
 src/lib/db/migrate.ts
-src/lib/db/repositories/draft-repository.ts
-src/lib/db/repositories/task-repository.ts
-src/lib/db/repositories/task-content-repository.ts
-src/lib/db/repositories/platform-settings-repository.ts
-src/lib/db/repositories/skill-repository.ts
-src/lib/db/repositories/history-action-repository.ts
-src/lib/db/repositories/library-entry-repository.ts
+src/lib/db/monitoring-repository.ts
+src/lib/db/supabase-monitoring-repository.ts
+src/lib/db/repositories/*.ts
+src/lib/db/repositories/sqlite/*.ts
+src/lib/db/supabase-content-repository.ts
+src/lib/supabase/data-api.ts
 ```
 
-覆盖数据：
+## SQLite Read/Write Areas Covered
 
-1. 需求草稿箱
-2. 内容生成任务
-3. 多平台生成内容
-4. 平台设置和图片模型设置
-5. 技能库、技能文件、技能学习结果、技能绑定
-6. 操作历史
-7. 内容库
+Monitoring and analysis:
 
-## Supabase Migration
+1. Auth users, workspaces and sessions.
+2. Monitor categories and creators.
+3. Keyword targets.
+4. Search queries and sync runs.
+5. Collected content and search-query content snapshots.
+6. Analysis snapshots, topics and evidence items.
+7. Global analysis settings.
+8. Topic library entries.
 
-需要在 Supabase SQL Editor 执行完整文件：
+Content creation:
+
+1. Draft inbox.
+2. Generation tasks.
+3. Multi-platform generated task contents.
+4. History actions.
+5. Content library entries.
+6. Platform settings and image model settings.
+7. Skills, skill learning results and skill bindings.
+
+## Supabase SQL Execution
+
+For a fresh Supabase project, run this SQL in Supabase SQL Editor:
 
 ```text
 supabase/migrations/202606050001_initial_ai_factory_schema.sql
 ```
 
-该 SQL 包含：
+If an earlier version of the Phase 1 SQL was already executed with boolean flag columns, also run:
 
-1. 当前 SQLite 表的 Postgres 版本
-2. `jsonb` 字段替换 SQLite JSON 字符串字段
-3. `boolean` 字段替换 SQLite 0/1 字段
-4. `timestamptz` 字段替换 SQLite 文本时间字段
-5. 多用户隔离预留 `workspace_id`
-6. Storage Bucket `assets` 初始化
+```text
+supabase/migrations/202606050002_sqlite_integer_flags_compatibility.sql
+```
 
-执行方式：
+The compatibility migration converts these early boolean columns to SQLite-compatible integer flags:
 
-1. 打开 Supabase Dashboard。
-2. 进入 `AI-factory` 项目。
-3. 打开 `SQL Editor`。
-4. 粘贴并执行 `supabase/migrations/202606050001_initial_ai_factory_schema.sql` 全部内容。
-5. 确认没有报错。
+```text
+collected_contents.is_original
+search_query_contents.is_original
+analysis_settings.enabled
+topic_library_entries.selected
+topic_library_entries.is_deleted
+skill_bindings.enabled
+```
 
-## Vercel 环境变量
+The current schema stores those flags as `integer` using `0` and `1`, matching the existing SQLite semantics and the Supabase REST runtime implementation.
 
-在 Vercel Project Settings > Environment Variables 中配置：
+## Environment Variables For Vercel
+
+Required production variables:
 
 ```env
 APP_DATABASE_PROVIDER=supabase
@@ -91,10 +113,10 @@ SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
 SUPABASE_STORAGE_BUCKET=assets
 CRON_SECRET=<random-secret>
 ENABLE_AUTO_PUBLISH=false
-APP_BASE_URL=https://<vercel-domain>
+APP_BASE_URL=https://<vercel-domain-or-custom-domain>
 ```
 
-继续补充业务 API：
+Business API variables:
 
 ```env
 WECHAT_MONITOR_TOKEN=<wechat-monitor-token>
@@ -104,6 +126,7 @@ SERPER_API_KEY=<serper-key>
 SILICONFLOW_API_KEY=<siliconflow-key>
 SILICONFLOW_BASE_URL=https://api.siliconflow.cn/v1
 SILICONFLOW_MODEL=Pro/zai-org/GLM-5
+SILICONFLOW_TEXT_MODEL=Pro/zai-org/GLM-4.7
 SILICONFLOW_IMAGE_MODEL=Qwen/Qwen-Image-Edit-2509
 SILICONFLOW_IMAGE_MODEL_FALLBACKS=Qwen/Qwen-Image-Edit-2509,Qwen/Qwen-Image-Edit,Qwen/Qwen-Image,Kwai-Kolors/Kolors
 WECHAT_PUBLISH_MODE=mock
@@ -114,51 +137,75 @@ XIAOHONGSHU_OPENAPI_KEY=<xiaohongshu-openapi-key>
 XIAOHONGSHU_OPENAPI_BASE_URL=https://note.limyai.com/api/openapi
 ```
 
-不要把真实值提交到 GitHub。
+Bootstrap/internal access variables:
 
-## 当前阶段边界
+```env
+ACF_BOOTSTRAP_EMAIL=<admin-email>
+ACF_BOOTSTRAP_PASSWORD=<admin-password>
+ACF_BOOTSTRAP_NAME=<admin-name>
+ACF_BOOTSTRAP_WORKSPACE_ID=default-workspace
+ACF_BOOTSTRAP_WORKSPACE_NAME=Default Workspace
+```
 
-已完成：
+Do not commit real values.
 
-1. SQLite 表结构盘点
-2. Supabase Postgres 建表 SQL
-3. Storage Bucket 初始化 SQL
-4. 生产环境变量清单
-5. 环境变量检查脚本
-6. Supabase 配置读取兼容 `NEXT_PUBLIC_SUPABASE_URL` 和 `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+## Supabase Storage
 
-仍需下一阶段完成：
+The SQL creates or verifies the `assets` storage bucket. Production should use:
 
-1. 将 `src/lib/db/monitoring-repository.ts` 从同步 SQLite API 改为异步 Postgres repository。
-2. 将 `src/lib/db/repositories/*` 从同步 SQLite API 改为异步 Postgres repository。
-3. 将调用这些 repository 的 API Route 加上 `await`。
-4. 在 Vercel 部署后验证真实 Postgres 读写。
+```env
+SUPABASE_STORAGE_BUCKET=assets
+```
 
-原因：当前运行时 repository 使用 `node:sqlite` 的同步 API，Supabase Postgres 需要异步网络连接，不能只通过替换连接字符串完成。
+Current image/file storage is partially cloud-ready. The database phase is complete enough for production DB runtime, but a later phase should fully audit all `node:fs` writes and route generated assets through Supabase Storage.
 
-## 本地测试步骤
+## Vercel Deployment Notes
+
+1. Import the GitHub repository in Vercel.
+2. Set Framework Preset to Next.js.
+3. Configure all environment variables above.
+4. Keep `ENABLE_AUTO_PUBLISH=false` for the MVP unless real publishing is intentionally enabled.
+5. Deploy.
+6. Use Vercel Cron from `vercel.json` for daily analysis.
+7. Protect `/api/cron/daily-analysis` with `CRON_SECRET`.
+
+## Local Verification
 
 ```bash
-npm run lint
-npm run test
 npm run build
 npm run db:check-production
 ```
 
-本地开发可以继续使用 SQLite：
+Optional broader checks:
 
-```env
-APP_DATABASE_PROVIDER=sqlite
-APP_STORAGE_PROVIDER=local
+```bash
+npm run lint
+npm run test
 ```
 
-## 线上部署测试步骤
+Note: local tests may still use SQLite paths and legacy fixture data. Production readiness for this phase is primarily verified by build plus Supabase SQL/env configuration.
 
-1. Supabase SQL Editor 执行 migration。
-2. Supabase Storage 确认存在 `assets` bucket。
-3. Vercel 配置全部环境变量。
-4. Vercel 部署成功。
-5. 访问 `/login`。
-6. 验证 `/api/cron/daily-analysis` 未带 `CRON_SECRET` 时返回 401。
-7. 验证生成图片后 `/api/assets/...` 可访问。
-8. 完成下一阶段 Postgres repository 后，再验证新增分类、采集、选题分析、批量生成、内容库、发布状态都写入 Supabase 表。
+## Online Smoke Test
+
+After deployment:
+
+1. Visit `/login`.
+2. Log in with the configured bootstrap account.
+3. Add a monitor category and creator.
+4. Refresh a keyword target.
+5. Confirm collected rows appear in Supabase tables.
+6. Run topic analysis and add topics to the topic library.
+7. Batch-generate selected topics.
+8. Confirm drafts, tasks and task contents are written to Supabase.
+9. Open content library and verify generated articles are visible.
+10. Call `/api/cron/daily-analysis` without `CRON_SECRET` and confirm it returns 401.
+
+## Repository Target
+
+Push this cloudized version to:
+
+```text
+https://github.com/Selina2025-alt/AI-Factory0605.git
+```
+
+Do not push to the older `AI-Content-Factory` remote unless the user explicitly asks.

@@ -35,14 +35,14 @@ export async function GET(request: NextRequest) {
   const repository = createMonitoringRepository();
 
   try {
-    const authContext = resolveAuthRequestContext(repository, request);
+    const authContext = await resolveAuthRequestContext(repository, request);
 
     if (!authContext) {
       return NextResponse.json({ error: "authentication required" }, { status: 401 });
     }
 
     const workspaceId = authContext.user.workspaceId;
-    const settings = getGlobalAnalysisSettings(repository, workspaceId);
+    const settings = await getGlobalAnalysisSettings(repository, workspaceId);
 
     return NextResponse.json({ settings });
   } finally {
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
   const repository = createMonitoringRepository();
 
   try {
-    const authContext = resolveAuthRequestContext(repository, request);
+    const authContext = await resolveAuthRequestContext(repository, request);
 
     if (!authContext) {
       return NextResponse.json({ error: "authentication required" }, { status: 401 });
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
       model: DEFAULT_SILICONFLOW_MODEL
     };
 
-    saveGlobalAnalysisSettings(repository, settings, workspaceId);
+    await saveGlobalAnalysisSettings(repository, settings, workspaceId);
     const taskResult = syncDailyAnalysisTask({
       enabled: settings.enabled,
       time: settings.time,

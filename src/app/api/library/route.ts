@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 
 import { migrateDatabase } from "@/lib/db/migrate";
 import { getDraftById } from "@/lib/db/repositories/draft-repository";
@@ -22,7 +22,7 @@ export const runtime = "nodejs";
 export async function GET() {
   migrateDatabase();
 
-  return NextResponse.json(getWechatLibraryPayload());
+  return NextResponse.json(await getWechatLibraryPayload());
 }
 
 export async function POST(request: Request) {
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
   let taskId: string | null = null;
 
   if (body.draftId) {
-    const draft = getDraftById(body.draftId);
+    const draft = await getDraftById(body.draftId);
 
     if (!draft?.lastGeneratedTaskId) {
       return NextResponse.json(
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
   } else if (body.taskId) {
     taskId = body.taskId;
 
-    const createdAction = listHistoryActions().find(
+    const createdAction = (await listHistoryActions()).find(
       (action) => action.taskId === body.taskId && action.actionType === "task_created"
     );
     const rawSourceDraftId = createdAction?.payload.sourceDraftId;
@@ -73,8 +73,8 @@ export async function POST(request: Request) {
     );
   }
 
-  const task = getTaskById(taskId);
-  const bundle = getTaskBundle(taskId);
+  const task = await getTaskById(taskId);
+  const bundle = await getTaskBundle(taskId);
 
   if (!task || !bundle.wechat) {
     return NextResponse.json(
@@ -83,16 +83,16 @@ export async function POST(request: Request) {
     );
   }
 
-  const existingEntry = getLibraryEntry(task.id);
+  const existingEntry = await getLibraryEntry(task.id);
 
-  createLibraryEntry({
+  await createLibraryEntry({
     taskId: task.id,
     sourceDraftId,
     platform: "wechat"
   });
 
   if (!existingEntry) {
-    createHistoryAction({
+    await createHistoryAction({
       taskId: task.id,
       actionType: "library_saved",
       payload: {
@@ -105,7 +105,7 @@ export async function POST(request: Request) {
 
   return NextResponse.json(
     {
-      item: getWechatLibraryItem(task.id)
+      item: await getWechatLibraryItem(task.id)
     },
     { status: existingEntry ? 200 : 201 }
   );

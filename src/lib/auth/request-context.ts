@@ -1,4 +1,4 @@
-import type { NextRequest } from "next/server";
+﻿import type { NextRequest } from "next/server";
 
 import type { MonitoringRepository } from "@/lib/db/monitoring-repository";
 import { getAuthenticatedUserBySession } from "@/lib/auth/auth-service";
@@ -15,17 +15,17 @@ export interface AuthRequestContext {
   };
 }
 
-export function resolveAuthRequestContext(
+export async function resolveAuthRequestContext(
   repository: MonitoringRepository,
   request: NextRequest
-): AuthRequestContext | null {
+): Promise<AuthRequestContext | null> {
   const sessionToken = request.cookies.get(SESSION_TOKEN_COOKIE)?.value?.trim() ?? "";
 
   if (!sessionToken) {
     return null;
   }
 
-  const user = getAuthenticatedUserBySession(repository, sessionToken);
+  const user = await getAuthenticatedUserBySession(repository, sessionToken);
 
   if (!user) {
     return null;

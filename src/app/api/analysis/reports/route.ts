@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const reportLimit = Number.isNaN(limit) ? 14 : limit;
-    const details = listAnalysisSnapshotsByKeyword(repository, categoryId, keyword, reportLimit);
+    const details = await listAnalysisSnapshotsByKeyword(repository, categoryId, keyword, reportLimit);
     const reports = mergePersistedReportsIntoReports(
       [],
       details.map(mapPersistedAnalysisSnapshotToReport),

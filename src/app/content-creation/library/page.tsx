@@ -1,11 +1,11 @@
-import { WechatLibraryShell } from "@/components/library/wechat-library-shell";
+﻿import { WechatLibraryShell } from "@/components/library/wechat-library-shell";
 import { migrateDatabase } from "@/lib/db/migrate";
 import { getWechatLibraryPayload } from "@/lib/library/wechat-library-service";
 
-export default function LibraryPage() {
+export default async function LibraryPage() {
   migrateDatabase();
 
-  const payload = getWechatLibraryPayload();
+  const payload = await getWechatLibraryPayload();
 
   return (
     <WechatLibraryShell

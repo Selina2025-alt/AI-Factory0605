@@ -11,9 +11,9 @@ export async function GET(request: NextRequest) {
   const repository = createMonitoringRepository();
 
   try {
-    ensureAuthBootstrap(repository);
+    await ensureAuthBootstrap(repository);
     const token = request.cookies.get(SESSION_TOKEN_COOKIE)?.value ?? "";
-    const user = getAuthenticatedUserBySession(repository, token);
+    const user = await getAuthenticatedUserBySession(repository, token);
 
     if (!user) {
       return NextResponse.json({ authenticated: false }, { status: 401 });

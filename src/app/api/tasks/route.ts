@@ -19,7 +19,7 @@ export const runtime = "nodejs";
 export async function GET() {
   migrateDatabase();
 
-  return NextResponse.json(listTasks());
+  return NextResponse.json(await listTasks());
 }
 
 export async function POST(request: Request) {
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     };
 
     const taskId = randomUUID();
-    const generationContext = resolveGenerationContext(body.platforms);
+    const generationContext = await resolveGenerationContext(body.platforms);
     const webSearch = await searchWebForContent({
       enabled: Boolean(body.enableWebSearch),
       prompt: body.prompt
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
       ),
       webSearchResults: webSearch.results
     });
-    const generationTrace = buildTaskGenerationTrace({
+    const generationTrace = await buildTaskGenerationTrace({
       prompt: body.prompt,
       platforms: body.platforms,
       skills: generationContext.skillSnapshots,
@@ -63,15 +63,15 @@ export async function POST(request: Request) {
       bundle.videoScript?.title ??
       body.prompt.slice(0, 24);
 
-    createTask({
+    await createTask({
       id: taskId,
       title,
       userInput: body.prompt,
       selectedPlatforms: body.platforms,
       status: "ready"
     });
-    createTaskContents(taskId, bundle);
-    createHistoryAction({
+    await createTaskContents(taskId, bundle);
+    await createHistoryAction({
       taskId,
       actionType: "task_created",
       payload: {
@@ -87,7 +87,7 @@ export async function POST(request: Request) {
     });
 
     if (body.sourceDraftId) {
-      markDraftGenerated(body.sourceDraftId, taskId);
+      await markDraftGenerated(body.sourceDraftId, taskId);
     }
 
     return NextResponse.json({ id: taskId, title, bundle }, { status: 201 });
@@ -104,4 +104,3 @@ export async function POST(request: Request) {
     );
   }
 }
-

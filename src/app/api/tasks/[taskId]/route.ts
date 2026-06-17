@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 
 import { getTaskGenerationTrace } from "@/lib/content/task-generation-trace";
 import { migrateDatabase } from "@/lib/db/migrate";
@@ -18,7 +18,7 @@ export async function GET(
   migrateDatabase();
 
   const { taskId } = await context.params;
-  const task = getTaskById(taskId);
+  const task = await getTaskById(taskId);
 
   if (!task) {
     return NextResponse.json({ message: "Task not found" }, { status: 404 });
@@ -26,8 +26,8 @@ export async function GET(
 
   return NextResponse.json({
     task,
-    bundle: getTaskBundle(taskId),
-    trace: getTaskGenerationTrace(taskId)
+    bundle: await getTaskBundle(taskId),
+    trace: await getTaskGenerationTrace(taskId)
   });
 }
 
@@ -41,10 +41,10 @@ export async function PATCH(
   const body = (await request.json()) as { title?: string };
 
   if (body.title?.trim()) {
-    renameTask(taskId, body.title.trim());
+    await renameTask(taskId, body.title.trim());
   }
 
-  return NextResponse.json(getTaskById(taskId));
+  return NextResponse.json(await getTaskById(taskId));
 }
 
 export async function DELETE(
@@ -54,7 +54,7 @@ export async function DELETE(
   migrateDatabase();
 
   const { taskId } = await context.params;
-  deleteTask(taskId);
+  await deleteTask(taskId);
 
   return NextResponse.json({ success: true });
 }

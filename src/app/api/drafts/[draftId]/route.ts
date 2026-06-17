@@ -17,7 +17,7 @@ export async function PATCH(
   migrateDatabase();
 
   const { draftId } = await context.params;
-  const existingDraft = getDraftById(draftId);
+  const existingDraft = await getDraftById(draftId);
 
   if (!existingDraft) {
     return NextResponse.json({ message: "Draft not found" }, { status: 404 });
@@ -29,7 +29,7 @@ export async function PATCH(
     selectedPlatforms?: PlatformId[];
   };
 
-  updateDraft({
+  await updateDraft({
     id: draftId,
     title: body.title?.trim() || existingDraft.title,
     prompt: body.prompt ?? existingDraft.prompt,
@@ -37,18 +37,17 @@ export async function PATCH(
     status: existingDraft.status
   });
 
-  return NextResponse.json(getDraftById(draftId));
+  return NextResponse.json(await getDraftById(draftId));
 }
 
 export async function DELETE(
-  request: Request,
+  _request: Request,
   context: { params: Promise<{ draftId: string }> }
 ) {
   migrateDatabase();
 
   const { draftId } = await context.params;
-  deleteDraft(draftId);
+  await deleteDraft(draftId);
 
   return NextResponse.json({ id: draftId, deleted: true });
 }
-

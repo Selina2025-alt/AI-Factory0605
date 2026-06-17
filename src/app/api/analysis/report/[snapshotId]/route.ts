@@ -14,13 +14,13 @@ export async function GET(
   const repository = createMonitoringRepository();
 
   try {
-    const detail = getAnalysisSnapshotById(repository, snapshotId);
+    const detail = await getAnalysisSnapshotById(repository, snapshotId);
 
     if (!detail) {
       return NextResponse.json({ error: "Analysis report not found" }, { status: 404 });
     }
 
-    const evidenceItems = getAnalysisEvidenceItemsBySnapshotId(repository, snapshotId);
+    const evidenceItems = await getAnalysisEvidenceItemsBySnapshotId(repository, snapshotId);
 
     return NextResponse.json({
       snapshot: detail.snapshot,

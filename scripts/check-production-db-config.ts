@@ -2,10 +2,14 @@ const REQUIRED_ENV_KEYS = [
   "APP_DATABASE_PROVIDER",
   "DATABASE_URL",
   "NEXT_PUBLIC_SUPABASE_URL",
-  "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
   "SUPABASE_SERVICE_ROLE_KEY",
   "SUPABASE_STORAGE_BUCKET",
   "CRON_SECRET"
+];
+
+const SUPABASE_PUBLIC_KEY_ENV_KEYS = [
+  "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+  "NEXT_PUBLIC_SUPABASE_ANON_KEY"
 ];
 
 function maskValue(value: string) {
@@ -21,7 +25,7 @@ function maskValue(value: string) {
 }
 
 function main() {
-  const rows = REQUIRED_ENV_KEYS.map((key) => {
+  const rows = [...REQUIRED_ENV_KEYS, ...SUPABASE_PUBLIC_KEY_ENV_KEYS].map((key) => {
     const value = process.env[key]?.trim() ?? "";
 
     return {
@@ -31,7 +35,10 @@ function main() {
     };
   });
 
-  const missing = rows.filter((row) => !row.present);
+  const missing = rows.filter((row) => REQUIRED_ENV_KEYS.includes(row.key) && !row.present);
+  const hasSupabasePublicKey = SUPABASE_PUBLIC_KEY_ENV_KEYS.some(
+    (key) => Boolean(process.env[key]?.trim())
+  );
 
   console.table(rows);
 
@@ -43,8 +50,14 @@ function main() {
     console.warn("SUPABASE_STORAGE_BUCKET is expected to be assets for this deployment.");
   }
 
-  if (missing.length > 0) {
-    throw new Error(`Missing required production env vars: ${missing.map((row) => row.key).join(", ")}`);
+  if (missing.length > 0 || !hasSupabasePublicKey) {
+    const missingKeys = missing.map((row) => row.key);
+
+    if (!hasSupabasePublicKey) {
+      missingKeys.push("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY or NEXT_PUBLIC_SUPABASE_ANON_KEY");
+    }
+
+    throw new Error(`Missing required production env vars: ${missingKeys.join(", ")}`);
   }
 
   console.log("Production database configuration looks complete.");

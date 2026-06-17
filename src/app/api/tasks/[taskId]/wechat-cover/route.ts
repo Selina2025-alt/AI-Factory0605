@@ -34,7 +34,7 @@ export async function POST(
   migrateDatabase();
 
   const { taskId } = await context.params;
-  const bundle = getTaskBundle(taskId);
+  const bundle = await getTaskBundle(taskId);
 
   if (!bundle.wechat) {
     return NextResponse.json(
@@ -59,13 +59,13 @@ export async function POST(
       candidateId: body.candidateId
     });
 
-    updateTaskPlatformContent({
+    await updateTaskPlatformContent({
       taskId,
       platform: "wechat",
       title: result.content.title,
       body: result.content
     });
-    createHistoryAction({
+    await createHistoryAction({
       taskId,
       actionType: "wechat_cover_generated",
       payload: {

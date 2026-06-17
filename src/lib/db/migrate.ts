@@ -1,5 +1,6 @@
 ﻿import { openDatabase } from "@/lib/db/client";
 import { schemaStatements } from "@/lib/db/content-creation-schema";
+import { getAppDatabaseProvider } from "@/lib/supabase/config";
 
 function columnExists(
   db: ReturnType<typeof openDatabase>,
@@ -27,6 +28,10 @@ function addColumnIfMissing(
 }
 
 export function migrateDatabase() {
+  if (getAppDatabaseProvider() === "supabase") {
+    return;
+  }
+
   const db = openDatabase();
 
   for (const statement of schemaStatements) {
@@ -54,4 +59,3 @@ export function migrateDatabase() {
 
   db.close();
 }
-

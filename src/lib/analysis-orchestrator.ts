@@ -235,13 +235,13 @@ export async function runKeywordTopicAnalysis(
     topicAnalysis.evidenceItems
   );
 
-  upsertAnalysisSnapshot(input.repository, archive);
-  upsertAnalysisEvidenceItems(input.repository, {
+  await upsertAnalysisSnapshot(input.repository, archive);
+  await upsertAnalysisEvidenceItems(input.repository, {
     snapshotId: archive.snapshot.id,
     items: evidenceItems
   });
 
-  const persistedSnapshot = getAnalysisSnapshotById(input.repository, archive.snapshot.id);
+  const persistedSnapshot = await getAnalysisSnapshotById(input.repository, archive.snapshot.id);
 
   return {
     skipped: false,

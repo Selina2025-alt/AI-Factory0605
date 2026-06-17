@@ -49,14 +49,14 @@ export async function GET(
   }
 
   const { taskId } = await context.params;
-  const task = getTaskById(taskId);
+  const task = await getTaskById(taskId);
 
   if (!task) {
     return NextResponse.json({ message: "Task not found" }, { status: 404 });
   }
 
   try {
-    const bundle = getTaskBundle(taskId);
+    const bundle = await getTaskBundle(taskId);
     const payload = await buildTaskExportPayload({
       format,
       task,

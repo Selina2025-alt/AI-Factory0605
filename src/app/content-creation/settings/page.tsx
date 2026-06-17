@@ -24,80 +24,55 @@ const platformIds: PlatformId[] = [
   "videoScript"
 ];
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
   migrateDatabase();
-  ensureBuiltinImageSkills();
+  await ensureBuiltinImageSkills();
 
-  const skills = listSkills();
-  const initialSkillDetails = skills.reduce<
-    Record<string, SkillLearningResultRecord | null>
-  >((result, skill) => {
-    result[skill.id] = getSkillLearningResult(skill.id);
-    return result;
-  }, {});
-  const initialPlatformSelections = platformIds.reduce<PlatformSkillSelections>(
-    (result, platformId) => {
-      const savedSetting = getPlatformSetting(platformId) as
-        | {
-            enabled_skill_ids_json?: string;
-          }
-        | null;
+  const skills = await listSkills();
+  const initialSkillDetails: Record<string, SkillLearningResultRecord | null> = {};
 
-      result[platformId] = savedSetting?.enabled_skill_ids_json
-        ? (JSON.parse(savedSetting.enabled_skill_ids_json) as string[])
-        : [];
+  for (const skill of skills) {
+    initialSkillDetails[skill.id] = await getSkillLearningResult(skill.id);
+  }
 
-      return result;
-    },
-    {
-      wechat: [],
-      xiaohongshu: [],
-      twitter: [],
-      videoScript: []
-    }
-  );
-  const initialImageSkillSelections = platformIds.reduce<PlatformSkillSelections>(
-    (result, platformId) => {
-      const savedSetting = getPlatformSetting(platformId) as
-        | {
-            image_skill_ids_json?: string;
-          }
-        | null;
+  const initialPlatformSelections: PlatformSkillSelections = {
+    wechat: [],
+    xiaohongshu: [],
+    twitter: [],
+    videoScript: []
+  };
+  const initialImageSkillSelections: PlatformSkillSelections = {
+    wechat: [],
+    xiaohongshu: [],
+    twitter: [],
+    videoScript: []
+  };
+  const initialImageModelSelections: PlatformImageModelSelections = {
+    wechat: DEFAULT_SILICONFLOW_IMAGE_MODEL,
+    xiaohongshu: DEFAULT_SILICONFLOW_IMAGE_MODEL,
+    twitter: DEFAULT_SILICONFLOW_IMAGE_MODEL,
+    videoScript: DEFAULT_SILICONFLOW_IMAGE_MODEL
+  };
 
-      result[platformId] = savedSetting?.image_skill_ids_json
-        ? (JSON.parse(savedSetting.image_skill_ids_json) as string[])
-        : [];
+  for (const platformId of platformIds) {
+    const savedSetting = (await getPlatformSetting(platformId)) as
+      | {
+          enabled_skill_ids_json?: string;
+          image_skill_ids_json?: string;
+          image_model?: string;
+        }
+      | null;
 
-      return result;
-    },
-    {
-      wechat: [],
-      xiaohongshu: [],
-      twitter: [],
-      videoScript: []
-    }
-  );
-  const initialImageModelSelections = platformIds.reduce<PlatformImageModelSelections>(
-    (result, platformId) => {
-      const savedSetting = getPlatformSetting(platformId) as
-        | {
-            image_model?: string;
-          }
-        | null;
-
-      result[platformId] = normalizeSiliconFlowImageModel(
-        savedSetting?.image_model ?? DEFAULT_SILICONFLOW_IMAGE_MODEL
-      );
-
-      return result;
-    },
-    {
-      wechat: DEFAULT_SILICONFLOW_IMAGE_MODEL,
-      xiaohongshu: DEFAULT_SILICONFLOW_IMAGE_MODEL,
-      twitter: DEFAULT_SILICONFLOW_IMAGE_MODEL,
-      videoScript: DEFAULT_SILICONFLOW_IMAGE_MODEL
-    }
-  );
+    initialPlatformSelections[platformId] = savedSetting?.enabled_skill_ids_json
+      ? (JSON.parse(savedSetting.enabled_skill_ids_json) as string[])
+      : [];
+    initialImageSkillSelections[platformId] = savedSetting?.image_skill_ids_json
+      ? (JSON.parse(savedSetting.image_skill_ids_json) as string[])
+      : [];
+    initialImageModelSelections[platformId] = normalizeSiliconFlowImageModel(
+      savedSetting?.image_model ?? DEFAULT_SILICONFLOW_IMAGE_MODEL
+    );
+  }
 
   return (
     <SettingsShell

@@ -1,4 +1,4 @@
-export interface UserFacingError {
+﻿export interface UserFacingError {
   code:
     | "balance_insufficient"
     | "model_timeout"
@@ -35,7 +35,7 @@ export function toUserFacingError(error: unknown): UserFacingError {
     normalized.includes("balance") ||
     normalized.includes("billing") ||
     normalized.includes("payment") ||
-    normalized.includes("余额") ||
+    normalized.includes("浣欓") ||
     normalized.includes("402")
   ) {
     return {
@@ -50,7 +50,7 @@ export function toUserFacingError(error: unknown): UserFacingError {
     normalized.includes("timed out") ||
     normalized.includes("timeout") ||
     normalized.includes("aborterror") ||
-    normalized.includes("超时")
+    normalized.includes("瓒呮椂")
   ) {
     return {
       code: "model_timeout",
@@ -63,7 +63,7 @@ export function toUserFacingError(error: unknown): UserFacingError {
   if (
     normalized.includes("search failed") ||
     normalized.includes("no relevant usable results") ||
-    normalized.includes("搜索失败")
+    normalized.includes("鎼滅储澶辫触")
   ) {
     return {
       code: "search_failed",
@@ -76,7 +76,7 @@ export function toUserFacingError(error: unknown): UserFacingError {
   if (
     normalized.includes("image request") ||
     normalized.includes("image generation") ||
-    normalized.includes("图片生成") ||
+    normalized.includes("鍥剧墖鐢熸垚") ||
     normalized.includes("download generated image") ||
     normalized.includes("xiaohongshu image")
   ) {

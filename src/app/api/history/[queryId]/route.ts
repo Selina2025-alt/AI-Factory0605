@@ -16,20 +16,20 @@ export async function GET(
   const repository = createMonitoringRepository();
 
   try {
-    const query = getSearchQueryById(repository, queryId);
+    const query = await getSearchQueryById(repository, queryId);
 
     if (!query) {
       return NextResponse.json({ error: "Query not found" }, { status: 404 });
     }
 
-    const analysisSnapshot = getAnalysisSnapshotBySearchQuery(repository, queryId);
+    const analysisSnapshot = await getAnalysisSnapshotBySearchQuery(repository, queryId);
     const analysis = analysisSnapshot
       ? {
           ...analysisSnapshot,
-          evidenceItems: getAnalysisEvidenceItemsBySnapshotId(repository, analysisSnapshot.snapshot.id)
+          evidenceItems: await getAnalysisEvidenceItemsBySnapshotId(repository, analysisSnapshot.snapshot.id)
         }
       : null;
-    const items = listCollectedContentsBySearchQuery(repository, { searchQueryId: queryId });
+    const items = await listCollectedContentsBySearchQuery(repository, { searchQueryId: queryId });
 
     return NextResponse.json({ query, analysis, items });
   } finally {

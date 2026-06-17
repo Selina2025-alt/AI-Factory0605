@@ -25,14 +25,14 @@ const builtInImageSkills: BuiltinImageSkillDefinition[] = [
     name: "Baoyu WeChat Cover",
     sourceRef: "https://github.com/JimLiu/baoyu-skills",
     summary:
-      "WeChat cover skill inspired by JimLiu/baoyu-skills, focused on high-readability公众号首图 with strong hierarchy and editorial storytelling.",
+      "WeChat cover skill inspired by JimLiu/baoyu-skills, focused on readable public-account covers with strong hierarchy and editorial storytelling.",
     platformHints: ["wechat"],
     keywords: ["wechat-cover", "baoyu-skills", "editorial", "hero-image"],
     rules: [
-      "Prioritize WeChat article cover readability: one clear visual thesis, one primary title block, one secondary support line.",
+      "Prioritize WeChat article cover readability: one clear visual thesis, one primary title block, and one secondary support line.",
       "Use editorial composition with strong hierarchy, generous whitespace, and mobile-first text legibility.",
       "Prefer meaningful metaphor and structured information over decorative noise.",
-      "Output should feel publish-ready for public-account distribution, not generic image placeholder."
+      "Output should feel publish-ready for public-account distribution, not like a generic placeholder."
     ],
     markdown: `---
 name: baoyu-wechat-cover
@@ -53,7 +53,7 @@ Use this skill to design high-quality WeChat article cover images.
 
 - Use concise title-first composition.
 - Keep visual language clean, intentional, and information-driven.
-- Balance aesthetics with distribution practicality for公众号封面.
+- Balance aesthetics with practical public-account cover requirements.
 `
   },
   {
@@ -68,7 +68,7 @@ Use this skill to design high-quality WeChat article cover images.
       "Design cover visuals for WeChat publishing with practical 16:9-friendly hero composition.",
       "Keep title, subtitle, and visual motif consistent with the article's narrative hook.",
       "Avoid clutter; favor clean typography and high contrast.",
-      "Use structure and tone suitable for long-form公众号文章."
+      "Use structure and tone suitable for long-form public-account articles."
     ],
     markdown: `---
 name: md2wechat-cover-hero
@@ -77,7 +77,7 @@ description: WeChat cover hero skill inspired by geekjourneyx/md2wechat-skill.
 
 # md2wechat Cover Hero Skill
 
-Use this skill when the article needs a classic公众号封面 with clear title-led hero style.
+Use this skill when the article needs a classic public-account cover with a clear title-led hero style.
 
 ## Goals
 
@@ -88,10 +88,10 @@ Use this skill when the article needs a classic公众号封面 with clear title-
   },
   {
     id: "builtin-image-satori-resvg",
-    name: "Satori + resvg 社交卡片",
+    name: "Satori + resvg Social Card",
     sourceRef: "https://github.com/vercel/satori + https://github.com/thx/resvg-js",
     summary:
-      "用 JSX/HTML/CSS 结构生成高质感社交图卡，适合封面、金句卡、框架卡和统一视觉系列。",
+      "Generate premium social cards from JSX/HTML/CSS-style layout specs for covers, quote cards, framework cards, and visual series.",
     keywords: ["satori", "resvg", "social-card", "html-css", "xiaohongshu"],
     rules: [
       "Use code-native layout with explicit typography, spacing, grid, and color tokens.",
@@ -125,10 +125,10 @@ Use this skill when Xiaohongshu content needs designed image cards rather than g
   },
   {
     id: "builtin-image-rough-js",
-    name: "Rough.js 手绘知识卡片",
+    name: "Rough.js Hand-drawn Knowledge Card",
     sourceRef: "https://github.com/rough-stuff/rough",
     summary:
-      "用手绘线条、涂鸦框、箭头和便签感结构做知识图谱卡，适合方法论、对比、流程和清单。",
+      "Use hand-drawn lines, rough boxes, arrows, and sticky-note structures for warm knowledge cards, method cards, comparisons, flows, and checklists.",
     keywords: ["rough", "hand-drawn", "sketch", "knowledge-card", "xiaohongshu"],
     rules: [
       "Use hand-drawn lines, rough rectangles, arrows, sticky notes, and warm paper texture.",
@@ -162,10 +162,10 @@ Use this skill when the content should feel human, hand-made, and easy to save.
   },
   {
     id: "builtin-image-excalidraw",
-    name: "Excalidraw 白板图解",
+    name: "Excalidraw Whiteboard Explainer",
     sourceRef: "https://github.com/excalidraw/excalidraw",
     summary:
-      "用白板草图、流程框、手绘箭头和结构图解释复杂概念，适合技术拆解和系统化表达。",
+      "Use whiteboard sketches, flow frames, hand-drawn arrows, and structured diagrams to explain complex ideas.",
     keywords: ["excalidraw", "whiteboard", "diagram", "flow", "xiaohongshu"],
     rules: [
       "Use whiteboard-style diagrams with clear nodes, arrows, grouped zones, and handwritten labels.",
@@ -198,10 +198,10 @@ Use this skill for concepts that need a diagram more than a pretty picture.
   },
   {
     id: "builtin-image-mermaid",
-    name: "Mermaid 结构流程图",
+    name: "Mermaid Structured Diagram",
     sourceRef: "https://github.com/mermaid-js/mermaid",
     summary:
-      "用流程图、时序图、状态图和架构图表达逻辑结构，适合技术路线、决策路径和步骤拆解。",
+      "Use flowcharts, sequence diagrams, state diagrams, and architecture diagrams to express logic, paths, and step-by-step structures.",
     keywords: ["mermaid", "flowchart", "sequence", "architecture", "xiaohongshu"],
     rules: [
       "Choose Mermaid-style diagrams for process, sequence, state, journey, timeline, and architecture content.",
@@ -234,11 +234,11 @@ Use this skill when the image should primarily communicate logic.
   },
   {
     id: "builtin-image-generative-canvas",
-    name: "p5.js + canvas-sketch 生成艺术卡片",
+    name: "p5.js + canvas-sketch Generative Poster",
     sourceRef:
       "https://github.com/processing/p5.js + https://github.com/mattdesl/canvas-sketch",
     summary:
-      "用生成式图形、粒子、网格、渐变和有机形态做更有情绪的封面与氛围卡。",
+      "Use generative shapes, particles, grids, gradients, and organic forms for emotional covers and atmosphere cards.",
     keywords: ["p5", "canvas-sketch", "generative", "poster", "xiaohongshu"],
     rules: [
       "Use generative shapes, grids, particles, gradients, and organic patterns as visual identity.",
@@ -271,10 +271,10 @@ Use this skill when a Xiaohongshu note needs a memorable visual atmosphere.
   },
   {
     id: "builtin-image-d3-visx",
-    name: "D3 / visx 数据可视化卡片",
+    name: "D3 / visx Data Visualization Card",
     sourceRef: "https://github.com/d3/d3 + https://github.com/airbnb/visx",
     summary:
-      "用图表、坐标、趋势线、矩阵和对比视图做数据化图文卡，适合报告、行业趋势和事实型内容。",
+      "Use charts, coordinates, trend lines, matrices, and comparison visuals for data-led social cards.",
     keywords: ["d3", "visx", "data-visualization", "chart", "xiaohongshu"],
     rules: [
       "Use data visualization patterns: bar, line, scatter, matrix, quadrant, funnel, and timeline.",
@@ -314,15 +314,15 @@ function writeBuiltinSkillFiles(definition: BuiltinImageSkillDefinition) {
   writeFileSync(path.join(unpackedDirectory, "SKILL.md"), definition.markdown, "utf8");
 }
 
-export function ensureBuiltinImageSkills() {
+export async function ensureBuiltinImageSkills() {
   for (const definition of builtInImageSkills) {
-    if (isBuiltinSkillDeleted(definition.id)) {
+    if (await isBuiltinSkillDeleted(definition.id)) {
       continue;
     }
 
     writeBuiltinSkillFiles(definition);
 
-    createSkill({
+    await createSkill({
       id: definition.id,
       name: definition.name,
       sourceType: "github",
@@ -332,7 +332,7 @@ export function ensureBuiltinImageSkills() {
       skillKind: "image"
     });
 
-    saveSkillLearningResult(definition.id, {
+    await saveSkillLearningResult(definition.id, {
       summary: definition.summary,
       rules: definition.rules,
       platformHints: definition.platformHints ?? ["xiaohongshu"],

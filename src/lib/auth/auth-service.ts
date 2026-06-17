@@ -1,6 +1,14 @@
-import crypto from "node:crypto";
+﻿import crypto from "node:crypto";
 
 import type { MonitoringRepository } from "@/lib/db/monitoring-repository";
+import { isSupabaseMonitoringRepository } from "@/lib/db/monitoring-repository";
+import {
+  deleteRows,
+  eq,
+  insertRows,
+  selectOne,
+  selectRows
+} from "@/lib/supabase/data-api";
 import { normalizeWorkspaceId } from "@/lib/workspace/workspace-context";
 
 export interface AuthSession {
@@ -84,7 +92,7 @@ function getBootstrapConfig() {
     .toLowerCase();
   const password = (process.env.ACF_BOOTSTRAP_PASSWORD ?? DEFAULT_BOOTSTRAP_PASSWORD).trim();
   const displayName = (process.env.ACF_BOOTSTRAP_NAME ?? DEFAULT_BOOTSTRAP_NAME).trim();
-  const workspaceName = (process.env.ACF_BOOTSTRAP_WORKSPACE_NAME ?? "默认工作空间").trim();
+  const workspaceName = (process.env.ACF_BOOTSTRAP_WORKSPACE_NAME ?? "Default Workspace").trim();
   const workspaceId = normalizeWorkspaceId(
     process.env.ACF_BOOTSTRAP_WORKSPACE_ID ?? "default-workspace"
   );
@@ -93,12 +101,220 @@ function getBootstrapConfig() {
     email,
     password,
     displayName: displayName || DEFAULT_BOOTSTRAP_NAME,
-    workspaceName: workspaceName || "默认工作空间",
+    workspaceName: workspaceName || "Default Workspace",
     workspaceId
   };
 }
 
+async function ensureAuthBootstrapSupabase() {
+  const existing = await selectOne<{ id: string }>("auth_users", {
+    select: "id",
+    limit: 1
+  });
+
+  if (existing) {
+    return;
+  }
+
+  const config = getBootstrapConfig();
+  const now = new Date().toISOString();
+  const userId = createOpaqueId("user");
+  const workspaceId = config.workspaceId || slugify("default-workspace");
+
+  await insertRows("auth_users", {
+    id: userId,
+    email: config.email,
+    password_hash: hashPassword(config.password),
+    display_name: config.displayName,
+    status: "active",
+    created_at: now,
+    updated_at: now
+  });
+  await insertRows("auth_workspaces", {
+    id: workspaceId,
+    name: config.workspaceName,
+    owner_user_id: userId,
+    created_at: now,
+    updated_at: now
+  });
+  await insertRows("auth_workspace_members", {
+    workspace_id: workspaceId,
+    user_id: userId,
+    role: "owner",
+    created_at: now
+  });
+}
+
+async function authenticateUserSupabase(
+  emailRaw: string,
+  password: string
+): Promise<AuthenticatedUser | null> {
+  await ensureAuthBootstrapSupabase();
+
+  const email = emailRaw.trim().toLowerCase();
+  const user = await selectOne<AuthUserRow>("auth_users", {
+    filters: { email: eq(email), status: eq("active") }
+  });
+
+  if (!user || !verifyPassword(password, user.password_hash)) {
+    return null;
+  }
+
+  const membership = await selectOne<{
+    workspace_id: string;
+    user_id: string;
+    role: string;
+    created_at: string;
+  }>("auth_workspace_members", {
+    filters: { user_id: eq(user.id) },
+    order: "created_at.asc"
+  });
+
+  if (!membership) {
+    return null;
+  }
+
+  const workspace = await selectOne<{ id: string; name: string }>("auth_workspaces", {
+    filters: { id: eq(membership.workspace_id) }
+  });
+
+  if (!workspace) {
+    return null;
+  }
+
+  return {
+    id: user.id,
+    email: user.email,
+    displayName: user.display_name,
+    workspaceId: workspace.id,
+    workspaceName: workspace.name
+  };
+}
+
+async function createAuthSessionSupabase(input: {
+  userId: string;
+  workspaceId: string;
+  ttlDays?: number;
+}): Promise<AuthSession> {
+  const now = new Date();
+  const token = createSessionToken();
+  const ttlDays = input.ttlDays ?? DEFAULT_SESSION_TTL_DAYS;
+  const expiresAt = new Date(now.getTime() + ttlDays * 24 * 60 * 60 * 1000).toISOString();
+  const createdAt = now.toISOString();
+
+  await insertRows("auth_sessions", {
+    token,
+    user_id: input.userId,
+    workspace_id: input.workspaceId,
+    expires_at: expiresAt,
+    created_at: createdAt
+  });
+
+  return {
+    token,
+    userId: input.userId,
+    workspaceId: input.workspaceId,
+    expiresAt,
+    createdAt
+  };
+}
+
+async function getSessionByTokenSupabase(tokenRaw: string): Promise<AuthSession | null> {
+  const token = tokenRaw.trim();
+
+  if (!token) {
+    return null;
+  }
+
+  const row = await selectOne<{
+    token: string;
+    user_id: string;
+    workspace_id: string;
+    expires_at: string;
+    created_at: string;
+  }>("auth_sessions", {
+    filters: { token: eq(token) }
+  });
+
+  if (!row) {
+    return null;
+  }
+
+  if (Date.parse(row.expires_at) <= Date.now()) {
+    await deleteRows("auth_sessions", { token: eq(row.token) });
+    return null;
+  }
+
+  return {
+    token: row.token,
+    userId: row.user_id,
+    workspaceId: row.workspace_id,
+    expiresAt: row.expires_at,
+    createdAt: row.created_at
+  };
+}
+
+async function revokeSessionSupabase(tokenRaw: string) {
+  const token = tokenRaw.trim();
+
+  if (!token) {
+    return;
+  }
+
+  await deleteRows("auth_sessions", { token: eq(token) });
+}
+
+async function getAuthenticatedUserBySessionSupabase(
+  sessionToken: string
+): Promise<AuthenticatedUser | null> {
+  const session = await getSessionByTokenSupabase(sessionToken);
+
+  if (!session) {
+    return null;
+  }
+
+  const user = await selectOne<{
+    id: string;
+    email: string;
+    display_name: string;
+  }>("auth_users", {
+    filters: { id: eq(session.userId), status: eq("active") }
+  });
+
+  if (!user) {
+    return null;
+  }
+
+  const workspace = await selectOne<{ id: string; name: string }>("auth_workspaces", {
+    filters: { id: eq(session.workspaceId) }
+  });
+
+  if (!workspace) {
+    return null;
+  }
+
+  const membership = await selectOne<{ role: string }>("auth_workspace_members", {
+    filters: { workspace_id: eq(workspace.id), user_id: eq(user.id) }
+  });
+
+  if (!membership) {
+    return null;
+  }
+
+  return {
+    id: user.id,
+    email: user.email,
+    displayName: user.display_name,
+    workspaceId: workspace.id,
+    workspaceName: workspace.name
+  };
+}
+
 export function ensureAuthBootstrap(repository: MonitoringRepository) {
+  if (isSupabaseMonitoringRepository(repository)) {
+    return ensureAuthBootstrapSupabase() as unknown as void;
+  }
+
   const existingCount = repository.database
     .prepare("SELECT COUNT(1) AS count FROM auth_users")
     .get() as { count: number };
@@ -127,14 +343,7 @@ export function ensureAuthBootstrap(repository: MonitoringRepository) {
           updated_at
         ) VALUES (?, ?, ?, ?, 'active', ?, ?)`
       )
-      .run(
-        userId,
-        config.email,
-        hashPassword(config.password),
-        config.displayName,
-        now,
-        now
-      );
+      .run(userId, config.email, hashPassword(config.password), config.displayName, now, now);
 
     repository.database
       .prepare(
@@ -171,6 +380,10 @@ export function authenticateUser(
   emailRaw: string,
   password: string
 ): AuthenticatedUser | null {
+  if (isSupabaseMonitoringRepository(repository)) {
+    return authenticateUserSupabase(emailRaw, password) as unknown as AuthenticatedUser | null;
+  }
+
   ensureAuthBootstrap(repository);
 
   const email = emailRaw.trim().toLowerCase();
@@ -220,6 +433,10 @@ export function createAuthSession(
     ttlDays?: number;
   }
 ): AuthSession {
+  if (isSupabaseMonitoringRepository(repository)) {
+    return createAuthSessionSupabase(input) as unknown as AuthSession;
+  }
+
   const now = new Date();
   const token = createSessionToken();
   const ttlDays = input.ttlDays ?? DEFAULT_SESSION_TTL_DAYS;
@@ -251,6 +468,10 @@ export function getSessionByToken(
   repository: MonitoringRepository,
   tokenRaw: string
 ): AuthSession | null {
+  if (isSupabaseMonitoringRepository(repository)) {
+    return getSessionByTokenSupabase(tokenRaw) as unknown as AuthSession | null;
+  }
+
   const token = tokenRaw.trim();
 
   if (!token) {
@@ -279,9 +500,7 @@ export function getSessionByToken(
   }
 
   if (Date.parse(row.expires_at) <= Date.now()) {
-    repository.database
-      .prepare("DELETE FROM auth_sessions WHERE token = ?")
-      .run(row.token);
+    repository.database.prepare("DELETE FROM auth_sessions WHERE token = ?").run(row.token);
     return null;
   }
 
@@ -295,21 +514,27 @@ export function getSessionByToken(
 }
 
 export function revokeSession(repository: MonitoringRepository, tokenRaw: string) {
+  if (isSupabaseMonitoringRepository(repository)) {
+    return revokeSessionSupabase(tokenRaw) as unknown as void;
+  }
+
   const token = tokenRaw.trim();
 
   if (!token) {
     return;
   }
 
-  repository.database
-    .prepare("DELETE FROM auth_sessions WHERE token = ?")
-    .run(token);
+  repository.database.prepare("DELETE FROM auth_sessions WHERE token = ?").run(token);
 }
 
 export function getAuthenticatedUserBySession(
   repository: MonitoringRepository,
   sessionToken: string
 ): AuthenticatedUser | null {
+  if (isSupabaseMonitoringRepository(repository)) {
+    return getAuthenticatedUserBySessionSupabase(sessionToken) as unknown as AuthenticatedUser | null;
+  }
+
   const session = getSessionByToken(repository, sessionToken);
 
   if (!session) {

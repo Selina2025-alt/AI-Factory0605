@@ -124,8 +124,8 @@ function getContentMeta(
   }
 }
 
-function getPreviousWebSearchPreference(taskId: string) {
-  const previousGenerationAction = listHistoryActions().find(
+async function getPreviousWebSearchPreference(taskId: string) {
+  const previousGenerationAction = (await listHistoryActions()).find(
     (action) =>
       action.taskId === taskId &&
       (action.actionType === "task_regenerated" ||
@@ -136,8 +136,8 @@ function getPreviousWebSearchPreference(taskId: string) {
   return Boolean(previousGenerationAction?.payload.enableWebSearch);
 }
 
-function getPreviousXiaohongshuImageGenerationPreference(taskId: string) {
-  const previousGenerationAction = listHistoryActions().find(
+async function getPreviousXiaohongshuImageGenerationPreference(taskId: string) {
+  const previousGenerationAction = (await listHistoryActions()).find(
     (action) =>
       action.taskId === taskId &&
       (action.actionType === "task_regenerated" ||
@@ -155,7 +155,7 @@ export async function POST(
   migrateDatabase();
 
   const { taskId } = await context.params;
-  const task = getTaskById(taskId);
+  const task = await getTaskById(taskId);
 
   if (!task) {
     return NextResponse.json({ message: "Task not found" }, { status: 404 });
@@ -196,7 +196,7 @@ export async function POST(
       !task.selectedPlatforms.includes(targetPlatform)
     ) {
       selectedPlatforms = [...task.selectedPlatforms, targetPlatform];
-      updateTaskSelectedPlatforms(taskId, selectedPlatforms);
+      await updateTaskSelectedPlatforms(taskId, selectedPlatforms);
     }
 
     const targetPlatforms = targetPlatform ? [targetPlatform] : task.selectedPlatforms;
@@ -210,12 +210,12 @@ export async function POST(
     const enableWebSearch =
       typeof body.enableWebSearch === "boolean"
         ? body.enableWebSearch
-        : getPreviousWebSearchPreference(taskId);
+        : await getPreviousWebSearchPreference(taskId);
     const enableXiaohongshuImageGeneration =
       typeof body.enableXiaohongshuImageGeneration === "boolean"
         ? body.enableXiaohongshuImageGeneration
-        : getPreviousXiaohongshuImageGenerationPreference(taskId);
-    const generationContext = resolveGenerationContext(targetPlatforms);
+        : await getPreviousXiaohongshuImageGenerationPreference(taskId);
+    const generationContext = await resolveGenerationContext(targetPlatforms);
     const webSearch = await searchWebForContent({
       enabled: enableWebSearch,
       prompt: task.userInput
@@ -230,7 +230,7 @@ export async function POST(
       twitterModePreference,
       webSearchResults: webSearch.results
     });
-    const generationTrace = buildTaskGenerationTrace({
+    const generationTrace = await buildTaskGenerationTrace({
       prompt: task.userInput,
       platforms: targetPlatforms,
       skills: generationContext.skillSnapshots,
@@ -251,7 +251,7 @@ export async function POST(
 
       const meta = getContentMeta(targetPlatform, generatedContent);
 
-      upsertTaskPlatformContent({
+      await upsertTaskPlatformContent({
         taskId,
         platform: targetPlatform,
         contentType: meta.contentType,
@@ -261,11 +261,11 @@ export async function POST(
 
       title = targetPlatform === "twitter" ? task.title : meta.title;
     } else {
-      replaceTaskContents(taskId, bundle);
+      await replaceTaskContents(taskId, bundle);
     }
 
-    renameTask(taskId, title);
-    createHistoryAction({
+    await renameTask(taskId, title);
+    await createHistoryAction({
       taskId,
       actionType: "task_regenerated",
       payload: {
@@ -283,8 +283,8 @@ export async function POST(
     });
 
     return NextResponse.json({
-      task: getTaskById(taskId),
-      bundle: getTaskBundle(taskId),
+      task: await getTaskById(taskId),
+      bundle: await getTaskBundle(taskId),
       trace: generationTrace
     });
   } catch (error) {

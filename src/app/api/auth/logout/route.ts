@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const token = request.cookies.get(SESSION_TOKEN_COOKIE)?.value ?? "";
-    revokeSession(repository, token);
+    await revokeSession(repository, token);
   } finally {
     repository.database.close();
   }
