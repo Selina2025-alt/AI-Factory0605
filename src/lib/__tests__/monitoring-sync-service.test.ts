@@ -62,7 +62,7 @@ describe("monitoring sync service", () => {
     expect(searchXiaohongshu).toHaveBeenCalledWith("openclaw", 1, "week");
     expect(result.items.map((item) => item.title)).toEqual(["newer", "older"]);
 
-    const stored = listStoredContentForKeywordTarget({
+    const stored = await listStoredContentForKeywordTarget({
       repository,
       categoryId: "claude",
       keywordTargetId: "target-1",
@@ -356,7 +356,7 @@ describe("monitoring sync service", () => {
     expect(result.cappedCount).toBe(20);
     expect(result.items).toHaveLength(20);
 
-    const stored = listStoredContentForKeywordTarget({
+    const stored = await listStoredContentForKeywordTarget({
       repository,
       categoryId: "claude",
       keywordTargetId: "target-1",
@@ -384,7 +384,7 @@ function buildContentItem(
   return {
     id,
     date: publishedAt.slice(0, 10),
-    timeOfDay: "上午",
+    timeOfDay: "涓婂崍",
     title,
     platformId,
     author: "Tester",

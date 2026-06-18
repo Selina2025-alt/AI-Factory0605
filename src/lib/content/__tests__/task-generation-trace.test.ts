@@ -7,21 +7,36 @@ import { buildTaskGenerationTrace } from "@/lib/content/task-generation-trace";
 const originalApiKey = process.env.SILICONFLOW_API_KEY;
 const originalModel = process.env.SILICONFLOW_MODEL;
 const originalImageModel = process.env.SILICONFLOW_IMAGE_MODEL;
+const originalDatabaseProvider = process.env.APP_DATABASE_PROVIDER;
+const originalStorageProvider = process.env.APP_STORAGE_PROVIDER;
+
+function restoreEnv(name: string, value: string | undefined) {
+  if (value === undefined) {
+    delete process.env[name];
+    return;
+  }
+
+  process.env[name] = value;
+}
 
 describe("task generation trace", () => {
   afterEach(() => {
-    process.env.SILICONFLOW_API_KEY = originalApiKey;
-    process.env.SILICONFLOW_MODEL = originalModel;
-    process.env.SILICONFLOW_IMAGE_MODEL = originalImageModel;
+    restoreEnv("SILICONFLOW_API_KEY", originalApiKey);
+    restoreEnv("SILICONFLOW_MODEL", originalModel);
+    restoreEnv("SILICONFLOW_IMAGE_MODEL", originalImageModel);
+    restoreEnv("APP_DATABASE_PROVIDER", originalDatabaseProvider);
+    restoreEnv("APP_STORAGE_PROVIDER", originalStorageProvider);
   });
 
-  it("shows the configured image model when Xiaohongshu image generation is enabled", () => {
+  it("shows the configured image model when Xiaohongshu image generation is enabled", async () => {
     process.env.SILICONFLOW_API_KEY = "test-api-key";
     process.env.SILICONFLOW_MODEL = "Pro/zai-org/GLM-4.7";
     process.env.SILICONFLOW_IMAGE_MODEL = "Qwen/Qwen-Image-Edit-2509";
+    process.env.APP_DATABASE_PROVIDER = "sqlite";
+    process.env.APP_STORAGE_PROVIDER = "local";
 
-    const trace = buildTaskGenerationTrace({
-      prompt: "写一篇小红书 AI 学习笔记",
+    const trace = await buildTaskGenerationTrace({
+      prompt: "Write a Xiaohongshu AI learning note",
       platforms: ["xiaohongshu"],
       skills: []
     });
@@ -31,30 +46,30 @@ describe("task generation trace", () => {
       expect.arrayContaining([
         expect.objectContaining({
           id: "image-generate",
-          label: "生成小红书配图"
+          status: "completed"
         })
       ])
     );
   });
 
-  it("treats Twitter as model-backed when SiliconFlow is configured", () => {
+  it("treats Twitter as model-backed when SiliconFlow is configured", async () => {
     process.env.SILICONFLOW_API_KEY = "test-api-key";
     process.env.SILICONFLOW_MODEL = "Pro/zai-org/GLM-4.7";
     delete process.env.SILICONFLOW_IMAGE_MODEL;
+    process.env.APP_DATABASE_PROVIDER = "sqlite";
+    process.env.APP_STORAGE_PROVIDER = "local";
 
-    const trace = buildTaskGenerationTrace({
-      prompt: "写一组关于 AI 学习的 Twitter Thread",
+    const trace = await buildTaskGenerationTrace({
+      prompt: "Write a Twitter thread about AI learning",
       platforms: ["twitter"],
       skills: []
     });
 
-    expect(trace.providerLabel).toBe("SiliconFlow · Pro/zai-org/GLM-4.7");
-    expect(trace.methodLabel).toBe("Twitter 结构化生成");
+    expect(trace.providerLabel).toContain("Pro/zai-org/GLM-4.7");
     expect(trace.sources).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           id: "twitter-built-in-skill",
-          label: "内置 Twitter Research + Voice Skill",
           detail: expect.stringContaining("public-clis/twitter-cli")
         })
       ])

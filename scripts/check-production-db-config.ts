@@ -1,10 +1,12 @@
 const REQUIRED_ENV_KEYS = [
   "APP_DATABASE_PROVIDER",
+  "APP_STORAGE_PROVIDER",
   "DATABASE_URL",
   "NEXT_PUBLIC_SUPABASE_URL",
   "SUPABASE_SERVICE_ROLE_KEY",
   "SUPABASE_STORAGE_BUCKET",
-  "CRON_SECRET"
+  "CRON_SECRET",
+  "APP_BASE_URL"
 ];
 
 const SUPABASE_PUBLIC_KEY_ENV_KEYS = [
@@ -44,6 +46,10 @@ function main() {
 
   if (process.env.APP_DATABASE_PROVIDER !== "supabase") {
     console.warn("APP_DATABASE_PROVIDER is not set to supabase.");
+  }
+
+  if (process.env.APP_STORAGE_PROVIDER !== "supabase") {
+    console.warn("APP_STORAGE_PROVIDER is not set to supabase.");
   }
 
   if (process.env.SUPABASE_STORAGE_BUCKET !== "assets") {

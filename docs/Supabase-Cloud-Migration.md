@@ -1,4 +1,4 @@
-﻿# Vercel + Supabase Cloud Migration
+# Vercel + Supabase Cloud Migration
 
 This document summarizes the current MVP cloudization path for AI Content Factory.
 
@@ -9,17 +9,21 @@ Completed:
 1. Vercel-ready Next.js project structure.
 2. Vercel Cron route for daily analysis: `src/app/api/cron/daily-analysis/route.ts`.
 3. Supabase config loader: `src/lib/supabase/config.ts`.
-4. Supabase Storage-aware asset route: `src/app/api/assets/[...assetPath]/route.ts`.
+4. Supabase Storage-aware generated asset write/read path: `src/lib/storage/generated-asset-storage.ts` and `src/app/api/assets/[...assetPath]/route.ts`.
 5. Supabase Postgres schema and migrations in `supabase/migrations`.
 6. Production database runtime switch with `APP_DATABASE_PROVIDER=supabase`.
 7. Local SQLite remains available with `APP_DATABASE_PROVIDER=sqlite`.
 8. Production build verified with `npm run build`.
+9. Image-package export reads `/api/assets/...` from Supabase Storage in production.
+10. Vercel/Supabase runtime no longer tries to create Windows `schtasks.exe` jobs.
+11. Custom ZIP/GitHub skill install endpoints fail fast with `501` in Supabase storage mode instead of writing local Vercel disk.
+12. Business tables are explicitly private from browser anon/auth roles; server routes use service-role access.
 
 Still pending for later phases:
 
 1. Full self-registration and public multi-tenant onboarding.
 2. Per-user encrypted API-key management UI and storage.
-3. Full audit/migration of every local `node:fs` write to Supabase Storage.
+3. Optional full Supabase Storage implementation for custom uploaded/GitHub-installed skill files.
 4. Durable background queue for very long batch generation jobs.
 5. Optional Supabase Auth/RLS hardening.
 
@@ -27,7 +31,7 @@ Still pending for later phases:
 
 1. Create a Supabase project.
 2. Run SQL migration `202606050001_initial_ai_factory_schema.sql`.
-3. If you previously ran the older boolean-column SQL, also run `202606050002_sqlite_integer_flags_compatibility.sql`.
+3. Run follow-up migrations `202606050002_sqlite_integer_flags_compatibility.sql` and `202606180001_lock_down_public_data_api.sql` in order.
 4. Configure Vercel Environment Variables.
 5. Deploy the GitHub repository on Vercel.
 6. Test login, monitor categories, collection, analysis, topic library, batch generation and content library.
@@ -69,6 +73,10 @@ The current migration covers:
 
 ## Supabase Storage
 
+Generated images are persisted under `generated-assets/...` when `APP_STORAGE_PROVIDER=supabase`. The server route `/api/assets/...` reads those private bucket objects through the service role key. Image-package export also uses the same storage abstraction, so downloaded packages include cloud-backed images.
+
+For real Xiaohongshu/WeChat publishing, configure `APP_BASE_URL` to the Vercel/custom domain so relative `/api/assets/...` image URLs become public absolute URLs.
+
 Current bucket:
 
 ```text
@@ -87,7 +95,7 @@ assets/
   skills/
 ```
 
-The current MVP has Storage-aware configuration, but a later phase should complete a full `node:fs` write audit before relying on Vercel-only runtime for all file-producing workflows.
+The current MVP supports generated-image storage on Supabase. Custom skill uploads and GitHub skill installs are intentionally local-only and return `501` in Supabase storage mode until a future Storage-backed skill-file implementation is added.
 
 ## Vercel Cron
 
@@ -103,14 +111,16 @@ Smoke test: calling the cron endpoint without the correct secret should return 4
 
 1. Supabase REST/Data API calls are network-bound; very large batch jobs may exceed Vercel route time limits.
 2. Real publishing should stay disabled until provider keys and account selection are verified.
-3. Local generated files are not automatically uploaded unless the Storage path is used.
+3. Custom uploaded/GitHub-installed skills are not durable on Vercel yet; use built-in skills or local storage for custom skill development.
 4. Public multi-user operation still needs registration, per-user API-key storage, and stronger access controls.
+5. `APP_BASE_URL` must be public and correct before real publishing uses generated `/api/assets/...` images.
 
 ## Verification Checklist
 
 Local:
 
 ```bash
+npm run lint
 npm run build
 npm run db:check-production
 ```
@@ -125,6 +135,8 @@ Online:
 6. Batch generation creates drafts and task contents.
 7. Content library lists generated articles.
 8. Cron endpoint is protected.
+9. `/api/assets/...` generated images load from Supabase Storage.
+10. Custom skill upload/install returns `501` in Supabase storage mode.
 
 ## Target Repository
 

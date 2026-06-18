@@ -404,6 +404,23 @@ create table if not exists library_entries (
 create index if not exists library_entries_workspace_updated_idx
   on library_entries (workspace_id, updated_at desc);
 
+-- Data API hardening for the server-side MVP.
+-- Business tables stay private from browser anon/auth clients; server routes use service_role.
+revoke all privileges on all tables in schema public from anon;
+revoke all privileges on all tables in schema public from authenticated;
+revoke all privileges on all sequences in schema public from anon;
+revoke all privileges on all sequences in schema public from authenticated;
+
+grant usage on schema public to service_role;
+grant all privileges on all tables in schema public to service_role;
+grant all privileges on all sequences in schema public to service_role;
+
+alter default privileges in schema public revoke all on tables from anon;
+alter default privileges in schema public revoke all on tables from authenticated;
+alter default privileges in schema public revoke all on sequences from anon;
+alter default privileges in schema public revoke all on sequences from authenticated;
+alter default privileges in schema public grant all privileges on tables to service_role;
+alter default privileges in schema public grant all privileges on sequences to service_role;
 -- Optional Storage bucket bootstrap for generated assets.
 insert into storage.buckets (id, name, public)
 values ('assets', 'assets', false)

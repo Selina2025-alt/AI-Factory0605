@@ -1,4 +1,4 @@
-﻿// @vitest-environment node
+// @vitest-environment node
 
 import { rmSync } from "node:fs";
 import path from "node:path";
@@ -21,6 +21,16 @@ const originalWechatBaseUrl = process.env.WECHAT_OPENAPI_BASE_URL;
 const originalXiaohongshuMode = process.env.XIAOHONGSHU_PUBLISH_MODE;
 const originalXiaohongshuApiKey = process.env.XIAOHONGSHU_OPENAPI_KEY;
 const originalXiaohongshuBaseUrl = process.env.XIAOHONGSHU_OPENAPI_BASE_URL;
+const originalAppBaseUrl = process.env.APP_BASE_URL;
+
+function restoreEnv(name: string, value: string | undefined) {
+  if (value === undefined) {
+    delete process.env[name];
+    return;
+  }
+
+  process.env[name] = value;
+}
 
 function seedTaskWithBundle(
   bundle: GeneratedTaskContentBundle,
@@ -47,13 +57,14 @@ describe("task publish route", () => {
   });
 
   afterEach(() => {
-    process.env.CONTENT_CREATION_AGENT_DATA_ROOT = originalDataRoot;
-    process.env.WECHAT_PUBLISH_MODE = originalWechatMode;
-    process.env.WECHAT_OPENAPI_KEY = originalWechatApiKey;
-    process.env.WECHAT_OPENAPI_BASE_URL = originalWechatBaseUrl;
-    process.env.XIAOHONGSHU_PUBLISH_MODE = originalXiaohongshuMode;
-    process.env.XIAOHONGSHU_OPENAPI_KEY = originalXiaohongshuApiKey;
-    process.env.XIAOHONGSHU_OPENAPI_BASE_URL = originalXiaohongshuBaseUrl;
+    restoreEnv("CONTENT_CREATION_AGENT_DATA_ROOT", originalDataRoot);
+    restoreEnv("WECHAT_PUBLISH_MODE", originalWechatMode);
+    restoreEnv("WECHAT_OPENAPI_KEY", originalWechatApiKey);
+    restoreEnv("WECHAT_OPENAPI_BASE_URL", originalWechatBaseUrl);
+    restoreEnv("XIAOHONGSHU_PUBLISH_MODE", originalXiaohongshuMode);
+    restoreEnv("XIAOHONGSHU_OPENAPI_KEY", originalXiaohongshuApiKey);
+    restoreEnv("XIAOHONGSHU_OPENAPI_BASE_URL", originalXiaohongshuBaseUrl);
+    restoreEnv("APP_BASE_URL", originalAppBaseUrl);
     rmSync(dataRoot, { recursive: true, force: true });
     vi.restoreAllMocks();
   });
@@ -431,6 +442,91 @@ describe("task publish route", () => {
     expect(getTaskBundle("task-publish-1").xiaohongshu?.publishStatus).toBe("published");
   });
 
+  it("publishes xiaohongshu content with relative Supabase asset URLs when APP_BASE_URL is public", async () => {
+    process.env.XIAOHONGSHU_PUBLISH_MODE = "real";
+    process.env.XIAOHONGSHU_OPENAPI_KEY = "xhs-api-key";
+    process.env.XIAOHONGSHU_OPENAPI_BASE_URL = "https://note.limyai.com/api/openapi";
+    process.env.APP_BASE_URL = "https://factory.example.com";
+
+    seedTaskWithBundle(
+      {
+        wechat: null,
+        xiaohongshu: {
+          title: "Relative cloud asset title",
+          caption: "Relative cloud asset content",
+          imageSuggestions: ["cover"],
+          imageAssets: [
+            {
+              id: "img-1",
+              title: "Cover",
+              prompt: "cover prompt",
+              alt: "cover",
+              src: "/api/assets/xiaohongshu/cloud-cover.png",
+              provider: "siliconflow"
+            }
+          ],
+          hashtags: []
+        },
+        twitter: null,
+        videoScript: null
+      },
+      ["xiaohongshu"]
+    );
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+
+      if (url === "https://factory.example.com/api/assets/xiaohongshu/cloud-cover.png") {
+        return {
+          ok: true,
+          status: 200
+        };
+      }
+
+      if (url === "https://note.limyai.com/api/openapi/publish_note") {
+        return {
+          ok: true,
+          status: 201,
+          json: async () => ({
+            success: true,
+            data: {
+              id: "publication-id",
+              note_id: "note-id",
+              publish_url: "https://note.example.com/publish?token=456",
+              status: "published"
+            }
+          })
+        };
+      }
+
+      throw new Error(`Unexpected request: ${url}`);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await publishTask(
+      new Request("http://localhost/api/tasks/task-publish-1/publish", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          platform: "xiaohongshu"
+        })
+      }),
+      { params: Promise.resolve({ taskId: "task-publish-1" }) }
+    );
+
+    expect(response.status).toBe(200);
+
+    const publishCall = fetchMock.mock.calls.find(
+      (call) => String(call[0]) === "https://note.limyai.com/api/openapi/publish_note"
+    );
+    const requestInit = publishCall?.[1] as RequestInit | undefined;
+    const payload = JSON.parse(String(requestInit?.body ?? "{}")) as Record<string, unknown>;
+
+    expect(payload.coverImage).toBe("https://factory.example.com/api/assets/xiaohongshu/cloud-cover.png");
+    expect(getTaskBundle("task-publish-1").xiaohongshu?.publishStatus).toBe("published");
+  });
   it("blocks xiaohongshu publishing when no public cover image exists", async () => {
     process.env.XIAOHONGSHU_PUBLISH_MODE = "real";
     process.env.XIAOHONGSHU_OPENAPI_KEY = "xhs-api-key";
@@ -632,4 +728,3 @@ describe("task publish route", () => {
     expect(getTaskBundle("task-publish-1").xiaohongshu?.publishStatus).toBe("idle");
   });
 });
-

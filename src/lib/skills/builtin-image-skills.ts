@@ -7,6 +7,7 @@ import {
   saveSkillLearningResult
 } from "@/lib/db/repositories/skill-repository";
 import { getSkillUnpackedDirectory } from "@/lib/fs/app-paths";
+import { getAppStorageProvider } from "@/lib/supabase/config";
 
 type BuiltinImageSkillDefinition = {
   id: string;
@@ -320,7 +321,9 @@ export async function ensureBuiltinImageSkills() {
       continue;
     }
 
-    writeBuiltinSkillFiles(definition);
+    if (getAppStorageProvider() === "local") {
+      writeBuiltinSkillFiles(definition);
+    }
 
     await createSkill({
       id: definition.id,

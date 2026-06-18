@@ -1,9 +1,8 @@
-﻿import { readFile } from "node:fs/promises";
-import path from "node:path";
+﻿import path from "node:path";
 
 import AdmZip from "adm-zip";
 
-import { getGeneratedAssetFilePath } from "@/lib/fs/app-paths";
+import { readGeneratedAsset } from "@/lib/storage/generated-asset-storage";
 import type {
   PersistedGeneratedTaskContentBundle,
   TaskRecord
@@ -22,13 +21,13 @@ export interface TaskExportPayload {
 }
 
 const videoScriptTableHeaders = [
-  "镜号",
-  "文案内容",
-  "画面建议",
-  "字幕重点",
-  "节奏",
-  "音效/音乐",
-  "特效"
+  "Shot",
+  "Copy / Voiceover",
+  "Visual",
+  "Subtitle",
+  "Pace",
+  "Audio",
+  "Effect"
 ];
 
 function sanitizeFileBaseName(value: string) {
@@ -85,11 +84,11 @@ function buildTaskMarkdown(
   task: TaskRecord,
   bundle: PersistedGeneratedTaskContentBundle
 ) {
-  const sections: string[] = [`# ${task.title}`, "", `> 原始需求：${task.userInput}`, ""];
+  const sections: string[] = [`# ${task.title}`, "", `> Request: ${task.userInput}`, ""];
 
   if (bundle.wechat) {
     sections.push(
-      "## 公众号文章",
+      "## WeChat Article",
       "",
       `### ${bundle.wechat.title}`,
       "",
@@ -102,13 +101,13 @@ function buildTaskMarkdown(
 
   if (bundle.xiaohongshu) {
     sections.push(
-      "## 小红书笔记",
+      "## Xiaohongshu Note",
       "",
       `### ${bundle.xiaohongshu.title}`,
       "",
       bundle.xiaohongshu.caption,
       "",
-      "### 配图提示词",
+      "### Image Suggestions",
       "",
       ...bundle.xiaohongshu.imageSuggestions.map(
         (suggestion, index) => `${index + 1}. ${suggestion}`
@@ -118,7 +117,7 @@ function buildTaskMarkdown(
 
     if (bundle.xiaohongshu.hashtags.length > 0) {
       sections.push(
-        "### 标签",
+        "### Hashtags",
         "",
         bundle.xiaohongshu.hashtags.map((tag) => `#${tag}`).join(" "),
         ""
@@ -130,8 +129,8 @@ function buildTaskMarkdown(
     sections.push(
       "## Twitter",
       "",
-      `- 模式：${bundle.twitter.mode}`,
-      `- 语言：${bundle.twitter.language ?? "English"}`,
+      `- Mode: ${bundle.twitter.mode}`,
+      `- Language: ${bundle.twitter.language ?? "English"}`,
       "",
       ...bundle.twitter.tweets.map((tweet, index) => `${index + 1}. ${tweet}`),
       ""
@@ -139,7 +138,7 @@ function buildTaskMarkdown(
   }
 
   if (bundle.videoScript) {
-    sections.push("## 视频脚本", "", buildVideoScriptMarkdown(bundle), "");
+    sections.push("## Video Script", "", buildVideoScriptMarkdown(bundle), "");
   }
 
   return sections.join("\n");
@@ -190,24 +189,24 @@ function buildTaskHtml(task: TaskRecord, bundle: PersistedGeneratedTaskContentBu
     "</head>",
     "<body>",
     `  <h1>${escapeHtml(task.title)}</h1>`,
-    `  <p class="meta"><strong>原始需求：</strong>${escapeHtml(task.userInput)}</p>`,
+    `  <p class="meta"><strong>Request:</strong> ${escapeHtml(task.userInput)}</p>`,
     bundle.wechat
       ? [
-          "  <h2>公众号文章</h2>",
+          "  <h2>WeChat Article</h2>",
           `  <h3>${escapeHtml(bundle.wechat.title)}</h3>`,
-          `  <p><strong>摘要：</strong>${escapeHtml(bundle.wechat.summary)}</p>`,
+          `  <p><strong>Summary:</strong> ${escapeHtml(bundle.wechat.summary)}</p>`,
           `  ${toHtmlParagraphs(bundle.wechat.body)}`
         ].join("\n")
       : "",
     bundle.xiaohongshu
       ? [
-          "  <h2>小红书笔记</h2>",
+          "  <h2>Xiaohongshu Note</h2>",
           `  <h3>${escapeHtml(bundle.xiaohongshu.title)}</h3>`,
           `  ${toHtmlParagraphs(bundle.xiaohongshu.caption)}`,
-          "  <h3>配图提示词</h3>",
+          "  <h3>Image Suggestions</h3>",
           `  ${xhsSuggestions}`,
           bundle.xiaohongshu.hashtags.length > 0
-            ? `  <p><strong>标签：</strong>${bundle.xiaohongshu.hashtags
+            ? `  <p><strong>Hashtags:</strong> ${bundle.xiaohongshu.hashtags
                 .map((tag) => `#${escapeHtml(tag)}`)
                 .join(" ")}</p>`
             : ""
@@ -216,14 +215,14 @@ function buildTaskHtml(task: TaskRecord, bundle: PersistedGeneratedTaskContentBu
     bundle.twitter
       ? [
           "  <h2>Twitter</h2>",
-          `  <p><strong>模式：</strong>${escapeHtml(bundle.twitter.mode)}</p>`,
-          `  <p><strong>语言：</strong>${escapeHtml(bundle.twitter.language ?? "English")}</p>`,
+          `  <p><strong>Mode:</strong> ${escapeHtml(bundle.twitter.mode)}</p>`,
+          `  <p><strong>Language:</strong> ${escapeHtml(bundle.twitter.language ?? "English")}</p>`,
           `  ${twitterList}`
         ].join("\n")
       : "",
     bundle.videoScript
       ? [
-          "  <h2>视频脚本</h2>",
+          "  <h2>Video Script</h2>",
           `  <h3>${escapeHtml(bundle.videoScript.title)}</h3>`,
           "  <table>",
           `    <thead><tr>${videoScriptTableHeaders
@@ -239,13 +238,13 @@ function buildTaskHtml(task: TaskRecord, bundle: PersistedGeneratedTaskContentBu
 }
 
 function parseDataUrl(src: string) {
-  const match = src.match(/^data:([^;,]+)?(;base64)?,([\s\S]+)$/i);
+  const match = src.match(/^data:([^;,]+)(;base64)?,(.*)$/);
 
   if (!match) {
     return null;
   }
 
-  const mediaType = (match[1] || "application/octet-stream").toLowerCase();
+  const mediaType = match[1] || "application/octet-stream";
   const isBase64 = Boolean(match[2]);
   const payload = match[3] || "";
   const buffer = isBase64
@@ -294,12 +293,18 @@ async function readImageAssetBuffer(src: string) {
       .split("/")
       .map((segment) => decodeURIComponent(segment))
       .filter((segment) => segment && !segment.includes("..") && !segment.includes("\\"));
-    const absolutePath = getGeneratedAssetFilePath(relativePath);
-    const buffer = await readFile(absolutePath);
+    const asset = await readGeneratedAsset(relativePath);
+
+    if (!asset) {
+      throw new Error("Image asset not found");
+    }
 
     return {
-      buffer,
-      extension: extensionFromSrc(absolutePath)
+      buffer: asset.buffer,
+      extension:
+        asset.contentType && asset.contentType !== "application/octet-stream"
+          ? extensionFromMediaType(asset.contentType)
+          : extensionFromSrc(src)
     };
   }
 
@@ -323,8 +328,9 @@ async function buildImagePackageExport(
   bundle: PersistedGeneratedTaskContentBundle
 ): Promise<TaskExportPayload> {
   const xiaohongshu = bundle.xiaohongshu;
+  const imageAssets = xiaohongshu?.imageAssets ?? [];
 
-  if (!xiaohongshu || !xiaohongshu.imageAssets || xiaohongshu.imageAssets.length === 0) {
+  if (!xiaohongshu || imageAssets.length === 0) {
     throw new Error("No Xiaohongshu images available for packaging");
   }
 
@@ -345,8 +351,8 @@ async function buildImagePackageExport(
     }>
   };
 
-  for (let index = 0; index < xiaohongshu.imageAssets.length; index += 1) {
-    const asset = xiaohongshu.imageAssets[index];
+  for (let index = 0; index < imageAssets.length; index += 1) {
+    const asset = imageAssets[index];
     const { buffer, extension } = await readImageAssetBuffer(asset.src);
     const fileName = `image-${String(index + 1).padStart(2, "0")}.${extension}`;
 
@@ -407,4 +413,3 @@ export async function buildTaskExportPayload(input: {
 
   return buildImagePackageExport(input.task, input.bundle);
 }
-

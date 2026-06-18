@@ -3,6 +3,7 @@ import { existsSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 
 const DEFAULT_TASK_NAME = "ContentPulseDailyAnalysis";
+const VERCEL_CRON_SCHEDULE_LABEL = "0 0 * * * UTC / 08:00 Asia/Shanghai";
 
 function resolveRunnerScript(projectRoot = process.cwd()) {
   return path.join(projectRoot, "scripts", "run-daily-analysis.cmd");
@@ -38,6 +39,13 @@ function normalizeTime(input: string) {
   return `${`${hours}`.padStart(2, "0")}:${`${minutes}`.padStart(2, "0")}`;
 }
 
+function isVercelCronManagedRuntime() {
+  return (
+    process.env.VERCEL === "1" ||
+    process.env.APP_DATABASE_PROVIDER?.trim().toLowerCase() === "supabase"
+  );
+}
+
 function runSchtasks(args: string[]) {
   return execFileSync("schtasks.exe", args, {
     encoding: "utf8",
@@ -48,15 +56,27 @@ function runSchtasks(args: string[]) {
 export function syncDailyAnalysisTask(
   input: SyncDailyAnalysisTaskInput
 ): SyncDailyAnalysisTaskResult {
-  if (process.platform !== "win32") {
+  const taskName = input.taskName ?? DEFAULT_TASK_NAME;
+  const time = normalizeTime(input.time);
+
+  if (isVercelCronManagedRuntime()) {
     return {
-      ok: false,
-      taskName: input.taskName ?? DEFAULT_TASK_NAME,
-      message: "Daily analysis task is only supported on Windows for now"
+      ok: true,
+      taskName,
+      message: input.enabled
+        ? `Vercel Cron is managed by vercel.json (${VERCEL_CRON_SCHEDULE_LABEL}). Saved preferred analysis time ${time}; update vercel.json and redeploy to change the actual production schedule.`
+        : "Daily analysis disabled in app settings; the Vercel Cron route will skip while settings remain disabled."
     };
   }
 
-  const taskName = input.taskName ?? DEFAULT_TASK_NAME;
+  if (process.platform !== "win32") {
+    return {
+      ok: false,
+      taskName,
+      message: "Daily analysis task is only supported on Windows outside Vercel"
+    };
+  }
+
   const projectRoot = input.projectRoot ?? process.cwd();
   const runnerScript = resolveRunnerScript(projectRoot);
 
@@ -82,7 +102,6 @@ export function syncDailyAnalysisTask(
     };
   }
 
-  const time = normalizeTime(input.time);
   const taskCommand = `cmd.exe /c "${runnerScript}"`;
 
   runSchtasks([

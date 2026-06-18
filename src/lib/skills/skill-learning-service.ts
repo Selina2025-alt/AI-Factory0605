@@ -1,7 +1,10 @@
-﻿import { parseSkillMarkdown } from "@/lib/skills/skill-parser";
+import { parseSkillMarkdown } from "@/lib/skills/skill-parser";
 
 const capabilityHeadingPatterns = [
+  /能力/,
+  /包含/,
   /鑳藉姏/,
+  /鍖呭惈/,
   /瑙﹀彂鏉′欢/,
   /宸ヤ綔娴佺▼/,
   /浣跨敤鏂瑰紡/,
@@ -29,7 +32,7 @@ function extractCapabilityRules(markdown: string) {
     }
 
     const markdownHeading = line.match(/^#{1,6}\s+(.+)$/);
-    const colonHeading = line.match(/^(.+?)[锛?]$/);
+    const colonHeading = line.match(/^(.+?)(?:[:：]|锛[?？]?|？|\?)$/);
     const headingText = markdownHeading?.[1] ?? colonHeading?.[1] ?? null;
 
     if (headingText) {

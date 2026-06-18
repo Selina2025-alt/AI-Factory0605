@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import MarkdownIt from "markdown-it";
 
 import { migrateDatabase } from "@/lib/db/migrate";
@@ -320,8 +320,10 @@ function pickWechatCoverImage(content: NonNullable<PersistedGeneratedTaskContent
   const candidates = [coverImageAsset.originalSrc, coverImageAsset.src];
 
   for (const candidate of candidates) {
-    if (typeof candidate === "string" && candidate.startsWith("http")) {
-      return candidate;
+    const publicUrl = getPublicImageUrl(candidate);
+
+    if (publicUrl) {
+      return publicUrl;
     }
   }
 
@@ -350,15 +352,52 @@ function isPrivateHostname(hostname: string) {
   return /^172\.(1[6-9]|2\d|3[01])\./.test(normalized);
 }
 
+function getPublicBaseUrl() {
+  const vercelUrl = process.env.VERCEL_URL?.trim()
+    ? `https://${process.env.VERCEL_URL.trim().replace(/^https?:\/\//i, "")}`
+    : undefined;
+  const candidates = [process.env.APP_BASE_URL, process.env.NEXT_PUBLIC_APP_URL, vercelUrl];
+
+  for (const candidate of candidates) {
+    const normalized = candidate?.trim().replace(/\/+$/g, "");
+
+    if (!normalized) {
+      continue;
+    }
+
+    try {
+      const url = new URL(normalized);
+
+      if ((url.protocol === "http:" || url.protocol === "https:") && !isPrivateHostname(url.hostname)) {
+        return url.toString().replace(/\/+$/g, "");
+      }
+    } catch {
+      // Ignore invalid deployment URLs and try the next candidate.
+    }
+  }
+
+  return null;
+}
+
 function getPublicImageUrl(value: unknown) {
   if (typeof value !== "string") {
     return null;
   }
 
-  const normalized = value.trim();
+  let normalized = value.trim();
 
   if (!normalized) {
     return null;
+  }
+
+  if (normalized.startsWith("/api/assets/")) {
+    const baseUrl = getPublicBaseUrl();
+
+    if (!baseUrl) {
+      return null;
+    }
+
+    normalized = `${baseUrl}${normalized}`;
   }
 
   if (!/^https?:\/\//i.test(normalized)) {
@@ -640,8 +679,9 @@ function buildNewsPicContent(input: {
   }
 
   for (const image of input.xiaohongshu?.imageAssets ?? []) {
-    const candidate = image.originalSrc ?? image.src;
-    if (candidate?.startsWith("http")) {
+    const candidate = getPublicImageUrl(image.originalSrc) ?? getPublicImageUrl(image.src);
+
+    if (candidate) {
       imageUrls.add(candidate);
     }
   }
@@ -943,4 +983,3 @@ export async function POST(
     platform: body.platform
   });
 }
-

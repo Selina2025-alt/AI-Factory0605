@@ -1,4 +1,4 @@
-﻿# AI Content Factory
+# AI Content Factory
 
 AI Content Factory is a unified content workflow that combines:
 
@@ -17,6 +17,7 @@ The current MVP keeps local development on SQLite by default, and supports produ
 - Content library selection and batch publishing flow.
 - Local SQLite persistence for development.
 - Supabase Postgres runtime persistence for production MVP.
+- Supabase Storage-backed generated assets for production image reads and exports.
 
 ## Project Docs
 
@@ -68,13 +69,12 @@ For a fresh Supabase project, execute:
 supabase/migrations/202606050001_initial_ai_factory_schema.sql
 ```
 
-If you already executed an earlier Phase 1 SQL before integer flag columns were introduced, also execute:
+Then execute the follow-up migrations in order:
 
 ```text
 supabase/migrations/202606050002_sqlite_integer_flags_compatibility.sql
+supabase/migrations/202606180001_lock_down_public_data_api.sql
 ```
-
-The compatibility migration is safe to run after either schema version.
 
 ### 2. Vercel Environment Variables
 
@@ -90,7 +90,7 @@ SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
 SUPABASE_STORAGE_BUCKET=assets
 CRON_SECRET=<random-secret>
 ENABLE_AUTO_PUBLISH=false
-APP_BASE_URL=https://<your-vercel-domain-or-custom-domain>
+APP_BASE_URL=https://<your-vercel-domain-or-custom-domain>  # required for publishing generated /api/assets images
 
 WECHAT_MONITOR_TOKEN=<wechat-monitor-token>
 XIAOHONGSHU_MONITOR_TOKEN=<xiaohongshu-monitor-token>
@@ -114,7 +114,13 @@ Never commit real values.
 
 ### 3. Vercel Cron
 
-`vercel.json` defines the daily analysis cron route. The route is protected by `CRON_SECRET`.
+`vercel.json` defines the daily analysis cron route. The route is protected by `CRON_SECRET`. In Vercel/Supabase mode, changing the analysis time in the UI saves the preference, but the actual production schedule is controlled by `vercel.json` and redeploying.
+
+### 4. Supabase Storage Notes
+
+Generated cover images and Xiaohongshu images are stored under the private `assets/generated-assets/...` bucket path when `APP_STORAGE_PROVIDER=supabase`. The app serves them through `/api/assets/...`, and publish flows convert those relative asset URLs to `APP_BASE_URL + /api/assets/...` for third-party publishing.
+
+Custom ZIP/GitHub skill installation still depends on local unpacked files, so those endpoints intentionally return `501` in Supabase storage mode. Built-in skills remain available.
 
 ## Database Runtime
 
@@ -145,10 +151,15 @@ npm run db:check-production
 npm run analysis:daily
 ```
 
-Current verified gate for this cloudization phase:
+Current verified gates for this cloudization phase:
 
 ```bash
+npm run lint
 npm run build
+npm run test -- src/lib/__tests__/analysis-scheduler.test.ts
+npm run test -- src/app/api/tasks/[taskId]/export/__tests__/route.test.ts
+npm run test -- src/app/api/tasks/[taskId]/publish/__tests__/route.test.ts
+npm run test -- src/app/api/skills/__tests__/cloud-storage-guard.test.ts
 ```
 
 ## Login And Access Protection
@@ -177,6 +188,9 @@ For public multi-tenant usage, registration and per-user encrypted API-key manag
 8. Content library reads generated articles.
 9. Publish mode defaults to mock unless real platform keys are configured.
 10. `/api/cron/daily-analysis` returns 401 without the correct cron secret.
+11. Generated images load through `/api/assets/...` after refresh.
+12. Image-package export includes Supabase-backed generated images.
+13. In Supabase storage mode, custom skill ZIP/GitHub install endpoints return `501` instead of writing local Vercel disk.
 
 ## Repository Safety
 

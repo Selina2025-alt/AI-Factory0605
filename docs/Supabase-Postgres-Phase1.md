@@ -1,4 +1,4 @@
-﻿# Supabase Postgres Phase 1
+# Supabase Postgres Phase 1
 
 This document tracks the first cloudization phase for AI Content Factory: production database runtime can use Supabase Postgres while local development can continue using SQLite.
 
@@ -18,7 +18,7 @@ Not completed in this phase:
 
 1. Full public self-registration.
 2. Per-user encrypted API-key storage in database.
-3. Complete migration of every local generated asset to Supabase Storage.
+3. Optional Storage-backed implementation for custom uploaded/GitHub-installed skill files.
 4. Long-running background job queue beyond current Vercel-compatible API/Cron structure.
 
 ## Runtime Switch
@@ -80,10 +80,11 @@ For a fresh Supabase project, run this SQL in Supabase SQL Editor:
 supabase/migrations/202606050001_initial_ai_factory_schema.sql
 ```
 
-If an earlier version of the Phase 1 SQL was already executed with boolean flag columns, also run:
+Then run the follow-up migrations in order. The compatibility migration is safe to run after either schema version.
 
 ```text
 supabase/migrations/202606050002_sqlite_integer_flags_compatibility.sql
+supabase/migrations/202606180001_lock_down_public_data_api.sql
 ```
 
 The compatibility migration converts these early boolean columns to SQLite-compatible integer flags:
@@ -157,7 +158,7 @@ The SQL creates or verifies the `assets` storage bucket. Production should use:
 SUPABASE_STORAGE_BUCKET=assets
 ```
 
-Current image/file storage is partially cloud-ready. The database phase is complete enough for production DB runtime, but a later phase should fully audit all `node:fs` writes and route generated assets through Supabase Storage.
+Generated image assets are cloud-ready when `APP_STORAGE_PROVIDER=supabase`: writes go to the private `assets/generated-assets/...` bucket, `/api/assets/...` reads from that bucket, and image-package export uses the same abstraction. Custom skill ZIP/GitHub install remains local-only and returns `501` in Supabase storage mode.
 
 ## Vercel Deployment Notes
 
@@ -166,7 +167,7 @@ Current image/file storage is partially cloud-ready. The database phase is compl
 3. Configure all environment variables above.
 4. Keep `ENABLE_AUTO_PUBLISH=false` for the MVP unless real publishing is intentionally enabled.
 5. Deploy.
-6. Use Vercel Cron from `vercel.json` for daily analysis.
+6. Use Vercel Cron from `vercel.json` for daily analysis; the UI analysis time is a stored preference, while production schedule changes require editing `vercel.json` and redeploying.
 7. Protect `/api/cron/daily-analysis` with `CRON_SECRET`.
 
 ## Local Verification
@@ -198,7 +199,10 @@ After deployment:
 7. Batch-generate selected topics.
 8. Confirm drafts, tasks and task contents are written to Supabase.
 9. Open content library and verify generated articles are visible.
-10. Call `/api/cron/daily-analysis` without `CRON_SECRET` and confirm it returns 401.
+10. Open a generated `/api/assets/...` image URL and verify it loads.
+11. Export an image package and verify Supabase-backed images are included.
+12. Call `/api/cron/daily-analysis` without `CRON_SECRET` and confirm it returns 401.
+13. Confirm custom skill ZIP/GitHub install endpoints return `501` in Supabase storage mode.
 
 ## Repository Target
 

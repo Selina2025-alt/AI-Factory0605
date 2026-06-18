@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 import type { SkillKind } from "@/lib/content-creation-types";
 import { migrateDatabase } from "@/lib/db/migrate";
@@ -9,11 +9,23 @@ import {
   saveSkillLearningResult
 } from "@/lib/db/repositories/skill-repository";
 import { ingestSkillZip } from "@/lib/skills/zip-skill-ingestion-service";
+import { getAppStorageProvider } from "@/lib/supabase/config";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   migrateDatabase();
+
+  if (getAppStorageProvider() === "supabase") {
+    return NextResponse.json(
+      {
+        code: "SKILL_FILE_INSTALL_LOCAL_ONLY",
+        message:
+          "Custom skill ZIP uploads are local-only in the current MVP. Use built-in skills in Vercel, or keep APP_STORAGE_PROVIDER=local for local skill installation."
+      },
+      { status: 501 }
+    );
+  }
 
   const formData = await request.formData();
   const file = formData.get("file");

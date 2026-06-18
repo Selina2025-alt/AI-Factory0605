@@ -1,7 +1,7 @@
 import { existsSync, rmSync } from "node:fs";
 import path from "node:path";
 
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { migrateDatabase } from "@/lib/db/migrate";
 import {
@@ -14,7 +14,20 @@ import { getSkillUnpackedDirectory } from "@/lib/fs/app-paths";
 import { ensureBuiltinImageSkills } from "@/lib/skills/builtin-image-skills";
 import { listSkillFiles, readSkillFile } from "@/lib/skills/skill-file-browser-service";
 
-process.env.CONTENT_CREATION_AGENT_DATA_ROOT = path.join(
+const originalDataRoot = process.env.CONTENT_CREATION_AGENT_DATA_ROOT;
+const originalDatabaseProvider = process.env.APP_DATABASE_PROVIDER;
+const originalStorageProvider = process.env.APP_STORAGE_PROVIDER;
+
+function restoreEnv(name: string, value: string | undefined) {
+  if (value === undefined) {
+    delete process.env[name];
+    return;
+  }
+
+  process.env[name] = value;
+}
+
+const dataRoot = path.join(
   process.cwd(),
   ".codex-data-tests",
   "builtin-image-skills"
@@ -22,15 +35,25 @@ process.env.CONTENT_CREATION_AGENT_DATA_ROOT = path.join(
 
 describe("builtin image skills", () => {
   beforeEach(() => {
-    rmSync(process.env.CONTENT_CREATION_AGENT_DATA_ROOT!, {
+    process.env.CONTENT_CREATION_AGENT_DATA_ROOT = dataRoot;
+    process.env.APP_DATABASE_PROVIDER = "sqlite";
+    process.env.APP_STORAGE_PROVIDER = "local";
+    rmSync(dataRoot, {
       recursive: true,
       force: true
     });
     migrateDatabase();
   });
 
-  it("seeds the built-in code drawing skills as image skills with previewable files", () => {
-    ensureBuiltinImageSkills();
+  afterEach(() => {
+    rmSync(dataRoot, { recursive: true, force: true });
+    restoreEnv("CONTENT_CREATION_AGENT_DATA_ROOT", originalDataRoot);
+    restoreEnv("APP_DATABASE_PROVIDER", originalDatabaseProvider);
+    restoreEnv("APP_STORAGE_PROVIDER", originalStorageProvider);
+  });
+
+  it("seeds the built-in code drawing skills as image skills with previewable files", async () => {
+    await ensureBuiltinImageSkills();
 
     const imageSkills = listSkills().filter((skill) => skill.skillKind === "image");
 
@@ -53,7 +76,7 @@ describe("builtin image skills", () => {
 
     expect(wechatCoverLearning?.platformHints).toContain("wechat");
     expect(roughSkill).toMatchObject({
-      name: "Rough.js 手绘知识卡片",
+      name: "Rough.js Hand-drawn Knowledge Card",
       sourceType: "github",
       skillKind: "image",
       status: "ready"
@@ -69,11 +92,11 @@ describe("builtin image skills", () => {
     );
   });
 
-  it("does not recreate a deleted built-in image skill", () => {
-    ensureBuiltinImageSkills();
+  it("does not recreate a deleted built-in image skill", async () => {
+    await ensureBuiltinImageSkills();
 
     deleteSkill("builtin-image-rough-js");
-    ensureBuiltinImageSkills();
+    await ensureBuiltinImageSkills();
 
     expect(getSkillById("builtin-image-rough-js")).toBeNull();
   });
