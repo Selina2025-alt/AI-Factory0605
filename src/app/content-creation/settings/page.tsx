@@ -24,6 +24,8 @@ const platformIds: PlatformId[] = [
   "videoScript"
 ];
 
+export const dynamic = "force-dynamic";
+
 export default async function SettingsPage() {
   migrateDatabase();
   await ensureBuiltinImageSkills();

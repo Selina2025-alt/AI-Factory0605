@@ -18,6 +18,14 @@ Completed:
 10. Vercel/Supabase runtime no longer tries to create Windows `schtasks.exe` jobs.
 11. Custom ZIP/GitHub skill install endpoints fail fast with `501` in Supabase storage mode instead of writing local Vercel disk.
 12. Business tables are explicitly private from browser anon/auth roles; server routes use service-role access.
+13. Vercel project `ai-factory0605` has been created and linked to the local project.
+14. Production deployment to `https://ai-factory0605.vercel.app` succeeds after marking runtime-data pages dynamic and using Vercel's default `.next` output directory.
+
+Current live smoke status:
+
+1. `/login` returns 200.
+2. `/` redirects to `/login?next=%2F` for unauthenticated users.
+3. Data APIs currently return server errors until `DATABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and Supabase SQL migrations are completed.
 
 Still pending for later phases:
 
@@ -26,6 +34,13 @@ Still pending for later phases:
 3. Optional full Supabase Storage implementation for custom uploaded/GitHub-installed skill files.
 4. Durable background queue for very long batch generation jobs.
 5. Optional Supabase Auth/RLS hardening.
+
+Still pending before the production MVP is usable end-to-end:
+
+1. Add real `DATABASE_URL` to Vercel Production.
+2. Add real `SUPABASE_SERVICE_ROLE_KEY` to Vercel Production.
+3. Run all Supabase SQL migrations in the Supabase SQL Editor.
+4. Redeploy after adding those two private values.
 
 ## Minimum Production Path
 
@@ -106,6 +121,18 @@ CRON_SECRET=<random-secret>
 ```
 
 Smoke test: calling the cron endpoint without the correct secret should return 401.
+
+## Vercel Project Notes
+
+Current project:
+
+```text
+Team: Selina's projects
+Project: ai-factory0605
+Production URL: https://ai-factory0605.vercel.app
+```
+
+The project must use the Next.js framework preset. `next.config.ts` keeps local production builds in `.next-build`, but switches to `.next` on Vercel through `process.env.VERCEL`, because Vercel's Next.js adapter expects `.next`.
 
 ## Risks
 

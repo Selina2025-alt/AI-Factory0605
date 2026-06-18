@@ -13,6 +13,9 @@ Completed in this phase:
 5. Updated API routes and server services to await repository calls when production uses Supabase.
 6. Kept existing SQLite files and local data directories untouched.
 7. Verified production build with `npm run build`.
+8. Verified Vercel production deployment build for project `ai-factory0605`.
+9. Marked server-rendered data pages as dynamic so Vercel build does not prerender pages that need Supabase runtime secrets.
+10. Updated `next.config.ts` so Vercel uses the standard `.next` build output while local production builds can keep `.next-build`.
 
 Not completed in this phase:
 
@@ -20,6 +23,7 @@ Not completed in this phase:
 2. Per-user encrypted API-key storage in database.
 3. Optional Storage-backed implementation for custom uploaded/GitHub-installed skill files.
 4. Long-running background job queue beyond current Vercel-compatible API/Cron structure.
+5. Final online runtime verification, because `DATABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are not yet configured in Vercel.
 
 ## Runtime Switch
 
@@ -162,13 +166,14 @@ Generated image assets are cloud-ready when `APP_STORAGE_PROVIDER=supabase`: wri
 
 ## Vercel Deployment Notes
 
-1. Import the GitHub repository in Vercel.
+1. Import the GitHub repository in Vercel, or use the existing project `ai-factory0605`.
 2. Set Framework Preset to Next.js.
-3. Configure all environment variables above.
+3. Configure all environment variables above. `DATABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` must be real values, not placeholders.
 4. Keep `ENABLE_AUTO_PUBLISH=false` for the MVP unless real publishing is intentionally enabled.
 5. Deploy.
 6. Use Vercel Cron from `vercel.json` for daily analysis; the UI analysis time is a stored preference, while production schedule changes require editing `vercel.json` and redeploying.
 7. Protect `/api/cron/daily-analysis` with `CRON_SECRET`.
+8. If Vercel reports a missing `.next` output directory, confirm the deployed commit includes the `process.env.VERCEL === "1"` branch in `next.config.ts`.
 
 ## Local Verification
 

@@ -12,3 +12,5 @@ coverage/
 .codex-data-tests/
 *.log
 apifox_doc_snapshot.html
+
+.vercel

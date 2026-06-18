@@ -4,6 +4,8 @@ import { WechatArticleDetail } from "@/components/library/wechat-article-detail"
 import { migrateDatabase } from "@/lib/db/migrate";
 import { getWechatLibraryDetail } from "@/lib/library/wechat-library-service";
 
+export const dynamic = "force-dynamic";
+
 export default async function LibraryArticleDetailPage(props: {
   params: Promise<{ taskId: string }>;
 }) {

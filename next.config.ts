@@ -9,7 +9,8 @@ const nextConfig = (phase: string): NextConfig => {
   }
 
   return {
-    distDir: phase === PHASE_DEVELOPMENT_SERVER ? ".next" : ".next-build"
+    distDir:
+      phase === PHASE_DEVELOPMENT_SERVER || process.env.VERCEL === "1" ? ".next" : ".next-build"
   };
 };
 

@@ -61,6 +61,23 @@ Do not commit `.env.local`, `.codex-data`, generated runtime files, or real API 
 
 ## Vercel + Supabase Production MVP
 
+Current cloud target:
+
+```text
+Vercel project: ai-factory0605
+Production URL: https://ai-factory0605.vercel.app
+GitHub target: https://github.com/Selina2025-alt/AI-Factory0605.git
+```
+
+As of 2026-06-18, the Vercel project has been created, linked and production deployed successfully. The login page returns 200 and protected app pages redirect to `/login`. Runtime data APIs still require the private Supabase values below before the app can be used end-to-end online:
+
+```text
+DATABASE_URL
+SUPABASE_SERVICE_ROLE_KEY
+```
+
+Do not use placeholder values for these two variables. Add the real values in Vercel Project Settings, run the Supabase SQL migrations, then redeploy.
+
 ### 1. Supabase SQL
 
 For a fresh Supabase project, execute:
@@ -111,6 +128,10 @@ XIAOHONGSHU_OPENAPI_BASE_URL=https://note.limyai.com/api/openapi
 ```
 
 Never commit real values.
+
+### 2.1 Vercel Build Notes
+
+The project uses a non-default local production build directory (`.next-build`) so local `next dev` and local production builds do not fight over the same folder. On Vercel, `next.config.ts` automatically uses the standard `.next` output directory when `VERCEL=1`, which keeps Vercel's Next.js adapter working without a custom output-directory setting.
 
 ### 3. Vercel Cron
 

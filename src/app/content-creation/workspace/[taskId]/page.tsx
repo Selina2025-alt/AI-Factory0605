@@ -8,6 +8,7 @@ import { getTaskBundle } from "@/lib/db/repositories/task-content-repository";
 import { getTaskById, listTasks } from "@/lib/db/repositories/task-repository";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export default async function WorkspacePage(props: {
   params: Promise<{ taskId: string }>;
