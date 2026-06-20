@@ -2,6 +2,7 @@
 
 import type { MonitoringRepository } from "@/lib/db/monitoring-repository";
 import { isSupabaseMonitoringRepository } from "@/lib/db/monitoring-repository";
+import { assertSafeSupabaseBootstrapCredentials } from "@/lib/cloud/cloud-readiness";
 import {
   deleteRows,
   eq,
@@ -87,6 +88,8 @@ function createSessionToken() {
 }
 
 function getBootstrapConfig() {
+  assertSafeSupabaseBootstrapCredentials();
+
   const email = (process.env.ACF_BOOTSTRAP_EMAIL ?? DEFAULT_BOOTSTRAP_EMAIL)
     .trim()
     .toLowerCase();

@@ -23,7 +23,7 @@ Not completed in this phase:
 2. Per-user encrypted API-key storage in database.
 3. Optional Storage-backed implementation for custom uploaded/GitHub-installed skill files.
 4. Long-running background job queue beyond current Vercel-compatible API/Cron structure.
-5. Final online runtime verification, because `DATABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are not yet configured in Vercel.
+5. Final online runtime verification, because `DATABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and private bootstrap credentials are not yet configured in Vercel.
 
 ## Runtime Switch
 
@@ -174,6 +174,7 @@ Generated image assets are cloud-ready when `APP_STORAGE_PROVIDER=supabase`: wri
 6. Use Vercel Cron from `vercel.json` for daily analysis; the UI analysis time is a stored preference, while production schedule changes require editing `vercel.json` and redeploying.
 7. Protect `/api/cron/daily-analysis` with `CRON_SECRET`.
 8. If Vercel reports a missing `.next` output directory, confirm the deployed commit includes the `process.env.VERCEL === "1"` branch in `next.config.ts`.
+9. Confirm `/api/health/cloud` returns `ready` before validating business workflows.
 
 ## Local Verification
 
@@ -196,18 +197,19 @@ Note: local tests may still use SQLite paths and legacy fixture data. Production
 After deployment:
 
 1. Visit `/login`.
-2. Log in with the configured bootstrap account.
-3. Add a monitor category and creator.
-4. Refresh a keyword target.
-5. Confirm collected rows appear in Supabase tables.
-6. Run topic analysis and add topics to the topic library.
-7. Batch-generate selected topics.
-8. Confirm drafts, tasks and task contents are written to Supabase.
-9. Open content library and verify generated articles are visible.
-10. Open a generated `/api/assets/...` image URL and verify it loads.
-11. Export an image package and verify Supabase-backed images are included.
-12. Call `/api/cron/daily-analysis` without `CRON_SECRET` and confirm it returns 401.
-13. Confirm custom skill ZIP/GitHub install endpoints return `501` in Supabase storage mode.
+2. Confirm `/api/health/cloud` returns `ready`.
+3. Log in with the configured bootstrap account.
+4. Add a monitor category and creator.
+5. Refresh a keyword target.
+6. Confirm collected rows appear in Supabase tables.
+7. Run topic analysis and add topics to the topic library.
+8. Batch-generate selected topics.
+9. Confirm drafts, tasks and task contents are written to Supabase.
+10. Open content library and verify generated articles are visible.
+11. Open a generated `/api/assets/...` image URL and verify it loads.
+12. Export an image package and verify Supabase-backed images are included.
+13. Call `/api/cron/daily-analysis` without `CRON_SECRET` and confirm it returns 401.
+14. Confirm custom skill ZIP/GitHub install endpoints return `501` in Supabase storage mode.
 
 ## Repository Target
 

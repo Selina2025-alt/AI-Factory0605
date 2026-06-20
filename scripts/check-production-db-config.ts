@@ -1,18 +1,8 @@
-const REQUIRED_ENV_KEYS = [
-  "APP_DATABASE_PROVIDER",
-  "APP_STORAGE_PROVIDER",
-  "DATABASE_URL",
-  "NEXT_PUBLIC_SUPABASE_URL",
-  "SUPABASE_SERVICE_ROLE_KEY",
-  "SUPABASE_STORAGE_BUCKET",
-  "CRON_SECRET",
-  "APP_BASE_URL"
-];
-
-const SUPABASE_PUBLIC_KEY_ENV_KEYS = [
-  "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
-  "NEXT_PUBLIC_SUPABASE_ANON_KEY"
-];
+import {
+  getCloudReadinessReport,
+  REQUIRED_PRODUCTION_ENV_KEYS,
+  SUPABASE_PUBLIC_KEY_ENV_KEYS
+} from "@/lib/cloud/cloud-readiness";
 
 function maskValue(value: string) {
   if (!value) {
@@ -26,8 +16,8 @@ function maskValue(value: string) {
   return `${value.slice(0, 4)}...${value.slice(-4)}`;
 }
 
-function main() {
-  const rows = [...REQUIRED_ENV_KEYS, ...SUPABASE_PUBLIC_KEY_ENV_KEYS].map((key) => {
+async function main() {
+  const rows = [...REQUIRED_PRODUCTION_ENV_KEYS, ...SUPABASE_PUBLIC_KEY_ENV_KEYS].map((key) => {
     const value = process.env[key]?.trim() ?? "";
 
     return {
@@ -37,36 +27,22 @@ function main() {
     };
   });
 
-  const missing = rows.filter((row) => REQUIRED_ENV_KEYS.includes(row.key) && !row.present);
-  const hasSupabasePublicKey = SUPABASE_PUBLIC_KEY_ENV_KEYS.some(
-    (key) => Boolean(process.env[key]?.trim())
+  console.table(rows);
+  const report = await getCloudReadinessReport({ probeSupabase: false });
+
+  console.table(
+    report.checks.map((check) => ({
+      id: check.id,
+      status: check.status,
+      message: check.message
+    }))
   );
 
-  console.table(rows);
-
-  if (process.env.APP_DATABASE_PROVIDER !== "supabase") {
-    console.warn("APP_DATABASE_PROVIDER is not set to supabase.");
+  if (report.status !== "ready") {
+    throw new Error("Production cloud readiness checks are blocked.");
   }
 
-  if (process.env.APP_STORAGE_PROVIDER !== "supabase") {
-    console.warn("APP_STORAGE_PROVIDER is not set to supabase.");
-  }
-
-  if (process.env.SUPABASE_STORAGE_BUCKET !== "assets") {
-    console.warn("SUPABASE_STORAGE_BUCKET is expected to be assets for this deployment.");
-  }
-
-  if (missing.length > 0 || !hasSupabasePublicKey) {
-    const missingKeys = missing.map((row) => row.key);
-
-    if (!hasSupabasePublicKey) {
-      missingKeys.push("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY or NEXT_PUBLIC_SUPABASE_ANON_KEY");
-    }
-
-    throw new Error(`Missing required production env vars: ${missingKeys.join(", ")}`);
-  }
-
-  console.log("Production database configuration looks complete.");
+  console.log("Production cloud readiness configuration looks complete.");
 }
 
 main();

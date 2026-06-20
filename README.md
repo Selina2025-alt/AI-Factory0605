@@ -69,14 +69,24 @@ Production URL: https://ai-factory0605.vercel.app
 GitHub target: https://github.com/Selina2025-alt/AI-Factory0605.git
 ```
 
-As of 2026-06-18, the Vercel project has been created, linked and production deployed successfully. The login page returns 200 and protected app pages redirect to `/login`. Runtime data APIs still require the private Supabase values below before the app can be used end-to-end online:
+As of 2026-06-18, the Vercel project has been created, linked and production deployed successfully. The login page returns 200 and protected app pages redirect to `/login`. Runtime data APIs still require the private Supabase values and private bootstrap admin credentials below before the app can be used end-to-end online:
 
 ```text
 DATABASE_URL
 SUPABASE_SERVICE_ROLE_KEY
+ACF_BOOTSTRAP_EMAIL
+ACF_BOOTSTRAP_PASSWORD
 ```
 
-Do not use placeholder values for these two variables. Add the real values in Vercel Project Settings, run the Supabase SQL migrations, then redeploy.
+Do not use placeholder values for these variables. Add the real values in Vercel Project Settings, run the Supabase SQL migrations, then redeploy.
+
+Cloud readiness endpoint:
+
+```text
+GET /api/health/cloud
+```
+
+This endpoint is intentionally accessible before login and returns only configuration status, never secret values. Use it after deployment to confirm whether Vercel env vars, Supabase REST/Data API and the `assets` bucket are ready.
 
 ### 1. Supabase SQL
 
@@ -197,21 +207,24 @@ ACF_BOOTSTRAP_WORKSPACE_NAME=Default Workspace
 
 For public multi-tenant usage, registration and per-user encrypted API-key management are recorded as a future TODO in `docs/Multi-User-Persistence-Phase1.md`.
 
+In `APP_DATABASE_PROVIDER=supabase` mode, the app refuses to bootstrap with the local default admin credentials. Set private `ACF_BOOTSTRAP_EMAIL` and `ACF_BOOTSTRAP_PASSWORD` values in Vercel before enabling online usage.
+
 ## Deployment Test Checklist
 
 1. Supabase SQL executes without errors.
 2. Vercel build succeeds.
-3. `/login` loads and blocks unauthenticated app pages.
-4. Monitor categories can be added, refreshed and reloaded.
-5. Keyword collection writes rows into Supabase.
-6. Analysis reports and topic-library entries persist after refresh.
-7. Batch generation creates drafts/tasks and updates generation status.
-8. Content library reads generated articles.
-9. Publish mode defaults to mock unless real platform keys are configured.
-10. `/api/cron/daily-analysis` returns 401 without the correct cron secret.
-11. Generated images load through `/api/assets/...` after refresh.
-12. Image-package export includes Supabase-backed generated images.
-13. In Supabase storage mode, custom skill ZIP/GitHub install endpoints return `501` instead of writing local Vercel disk.
+3. `/api/health/cloud` returns the exact remaining cloud-readiness gaps and never exposes secret values.
+4. `/login` loads and blocks unauthenticated app pages.
+5. Monitor categories can be added, refreshed and reloaded.
+6. Keyword collection writes rows into Supabase.
+7. Analysis reports and topic-library entries persist after refresh.
+8. Batch generation creates drafts/tasks and updates generation status.
+9. Content library reads generated articles.
+10. Publish mode defaults to mock unless real platform keys are configured.
+11. `/api/cron/daily-analysis` returns 401 without the correct cron secret.
+12. Generated images load through `/api/assets/...` after refresh.
+13. Image-package export includes Supabase-backed generated images.
+14. In Supabase storage mode, custom skill ZIP/GitHub install endpoints return `501` instead of writing local Vercel disk.
 
 ## Repository Safety
 

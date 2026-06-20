@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { SESSION_TOKEN_COOKIE } from "@/lib/workspace/workspace-context";
 
-const AUTH_FREE_API_PATHS = ["/api/auth/login", "/api/auth/session", "/api/auth/logout"];
+const AUTH_FREE_API_PATHS = [
+  "/api/auth/login",
+  "/api/auth/session",
+  "/api/auth/logout",
+  "/api/health/cloud"
+];
 
 function isStaticPath(pathname: string) {
   return (

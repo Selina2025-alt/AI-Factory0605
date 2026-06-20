@@ -25,7 +25,8 @@ Current live smoke status:
 
 1. `/login` returns 200.
 2. `/` redirects to `/login?next=%2F` for unauthenticated users.
-3. Data APIs currently return server errors until `DATABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and Supabase SQL migrations are completed.
+3. `/api/health/cloud` is available before login and reports missing cloud configuration without exposing secret values.
+4. Data APIs currently return server errors until `DATABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, private bootstrap credentials and Supabase SQL migrations are completed.
 
 Still pending for later phases:
 
@@ -39,8 +40,9 @@ Still pending before the production MVP is usable end-to-end:
 
 1. Add real `DATABASE_URL` to Vercel Production.
 2. Add real `SUPABASE_SERVICE_ROLE_KEY` to Vercel Production.
-3. Run all Supabase SQL migrations in the Supabase SQL Editor.
-4. Redeploy after adding those two private values.
+3. Add private `ACF_BOOTSTRAP_EMAIL` and `ACF_BOOTSTRAP_PASSWORD` to Vercel Production.
+4. Run all Supabase SQL migrations in the Supabase SQL Editor.
+5. Redeploy after adding those private values.
 
 ## Minimum Production Path
 
@@ -64,6 +66,8 @@ SUPABASE_STORAGE_BUCKET=assets
 CRON_SECRET=<random-secret>
 ENABLE_AUTO_PUBLISH=false
 APP_BASE_URL=https://<vercel-domain-or-custom-domain>
+ACF_BOOTSTRAP_EMAIL=<private-admin-email>
+ACF_BOOTSTRAP_PASSWORD=<private-admin-password>
 ```
 
 Business provider variables are documented in `README.md` and `docs/Supabase-Postgres-Phase1.md`.
@@ -121,6 +125,24 @@ CRON_SECRET=<random-secret>
 ```
 
 Smoke test: calling the cron endpoint without the correct secret should return 401.
+
+## Cloud Health Check
+
+Use this unauthenticated endpoint after every production deployment:
+
+```text
+GET /api/health/cloud
+```
+
+It checks:
+
+1. Required Vercel environment variable names are present.
+2. Supabase database/storage switches are set.
+3. Bootstrap admin credentials are not missing and do not use the local defaults.
+4. Supabase REST/Data API can read `auth_users` with service-role access.
+5. Supabase Storage bucket `assets` is reachable.
+
+The endpoint reports only status and missing variable names. It never returns secret values.
 
 ## Vercel Project Notes
 
