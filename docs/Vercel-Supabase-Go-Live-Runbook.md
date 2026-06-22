@@ -78,6 +78,14 @@ SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
 
 Use the Supabase pooler connection string for `DATABASE_URL`. Keep the real password only in Supabase/Vercel, never in the repository.
 
+Recommended local helper on Windows:
+
+```powershell
+npm run cloud:add-vercel-secrets
+```
+
+The helper prompts for `DATABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` with hidden input, then pipes them to Vercel Production. It does not print or write the values to disk.
+
 Optional CLI pattern if already authenticated with Vercel:
 
 ```powershell

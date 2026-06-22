@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "analysis:daily": "tsx scripts/run-daily-analysis.ts",
+    "cloud:add-vercel-secrets": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/add-vercel-supabase-secrets.ps1",
     "cloud:doctor": "tsx scripts/cloud-doctor.ts",
     "cloud:doctor:strict": "tsx scripts/cloud-doctor.ts --strict",
     "db:check-production": "tsx scripts/check-production-db-config.ts",

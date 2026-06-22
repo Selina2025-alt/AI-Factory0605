@@ -165,6 +165,19 @@ XIAOHONGSHU_OPENAPI_BASE_URL=https://note.limyai.com/api/openapi
 
 Never commit real values.
 
+For the two private Supabase runtime values, you can either add them in the Vercel Dashboard or run the local Windows helper below. The helper reads values with hidden input and pipes them directly to Vercel; it does not print or save the secrets.
+
+```powershell
+npm run cloud:add-vercel-secrets
+```
+
+Then redeploy production and verify:
+
+```powershell
+npx vercel@54.14.2 deploy --prod --yes --scope selinas-projects-d6525c85
+npm run cloud:doctor
+```
+
 ### 2.1 Vercel Build Notes
 
 The project uses a non-default local production build directory (`.next-build`) so local `next dev` and local production builds do not fight over the same folder. On Vercel, `next.config.ts` automatically uses the standard `.next` output directory when `VERCEL=1`, which keeps Vercel's Next.js adapter working without a custom output-directory setting.
