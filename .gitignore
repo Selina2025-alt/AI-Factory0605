@@ -14,3 +14,4 @@ coverage/
 apifox_doc_snapshot.html
 
 .vercel
+.secrets/
