@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "analysis:daily": "tsx scripts/run-daily-analysis.ts",
+    "cloud:doctor": "tsx scripts/cloud-doctor.ts",
+    "cloud:doctor:strict": "tsx scripts/cloud-doctor.ts --strict",
     "db:check-production": "tsx scripts/check-production-db-config.ts",
     "supabase:bundle-sql": "tsx scripts/build-supabase-go-live-sql.ts",
     "supabase:bundle-sql:check": "tsx scripts/build-supabase-go-live-sql.ts --check",

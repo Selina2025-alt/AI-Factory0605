@@ -50,6 +50,14 @@ Before copying the bundle, you can confirm it is current:
 npm run supabase:bundle-sql:check
 ```
 
+You can also run the broader read-only launch check:
+
+```bash
+npm run cloud:doctor
+```
+
+This checks the SQL bundle, migration files, local Vercel project link, current shell env shape, and the live `/api/health/cloud` endpoint. It only reports secret names and probe statuses, never secret values. Use `npm run cloud:doctor:strict` when you want the command to fail if the production health endpoint is still blocked.
+
 Expected result:
 
 ```text
@@ -116,6 +124,12 @@ bootstrap-credentials
 supabase-postgres
 supabase-rest
 supabase-storage
+```
+
+Equivalent command-line check:
+
+```bash
+npm run cloud:doctor
 ```
 
 ## Step 5: Online Smoke Test

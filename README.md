@@ -98,6 +98,14 @@ Production go-live runbook:
 docs/Vercel-Supabase-Go-Live-Runbook.md
 ```
 
+Cloud doctor:
+
+```bash
+npm run cloud:doctor
+```
+
+`cloud:doctor` checks the Supabase SQL bundle, required migration files, local Vercel project link, current shell env shape, and the live `/api/health/cloud` endpoint. It reports missing variable names and probe status only; it never prints secret values. Use `npm run cloud:doctor:strict` in CI or before launch when you want missing cloud requirements to fail the command.
+
 ### 1. Supabase SQL
 
 For a fresh Supabase project, the safest path is to execute the generated go-live bundle in Supabase SQL Editor:
@@ -196,6 +204,7 @@ Important files:
 npm run lint
 npm run build
 npm run test
+npm run cloud:doctor
 npm run db:check-production
 npm run analysis:daily
 ```
@@ -207,6 +216,7 @@ npm run lint
 npm run build
 npm audit --omit=dev --audit-level=high
 npm run supabase:bundle-sql:check
+npm run cloud:doctor
 npm run test -- src/lib/__tests__/analysis-scheduler.test.ts
 npm run test -- src/app/api/tasks/[taskId]/export/__tests__/route.test.ts
 npm run test -- src/app/api/tasks/[taskId]/publish/__tests__/route.test.ts
