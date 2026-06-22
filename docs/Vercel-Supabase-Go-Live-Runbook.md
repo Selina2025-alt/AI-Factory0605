@@ -30,12 +30,24 @@ Once `DATABASE_URL` is set, this endpoint performs a direct Supabase Postgres co
 
 ## Step 1: Run Supabase SQL
 
-Open the Supabase project SQL Editor and run these files in order:
+Open the Supabase project SQL Editor and run this generated bundle:
+
+```text
+supabase/ai_factory_supabase_go_live.sql
+```
+
+The bundle is generated from these source migrations in order:
 
 ```text
 supabase/migrations/202606050001_initial_ai_factory_schema.sql
 supabase/migrations/202606050002_sqlite_integer_flags_compatibility.sql
 supabase/migrations/202606180001_lock_down_public_data_api.sql
+```
+
+Before copying the bundle, you can confirm it is current:
+
+```bash
+npm run supabase:bundle-sql:check
 ```
 
 Expected result:

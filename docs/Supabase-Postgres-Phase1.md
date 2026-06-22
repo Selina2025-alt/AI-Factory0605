@@ -78,17 +78,25 @@ Content creation:
 
 ## Supabase SQL Execution
 
-For a fresh Supabase project, run this SQL in Supabase SQL Editor:
+For a fresh Supabase project, run this generated SQL bundle in Supabase SQL Editor:
+
+```text
+supabase/ai_factory_supabase_go_live.sql
+```
+
+The bundle is generated from these source migrations in order. The compatibility migration is safe to run after either schema version.
 
 ```text
 supabase/migrations/202606050001_initial_ai_factory_schema.sql
-```
-
-Then run the follow-up migrations in order. The compatibility migration is safe to run after either schema version.
-
-```text
 supabase/migrations/202606050002_sqlite_integer_flags_compatibility.sql
 supabase/migrations/202606180001_lock_down_public_data_api.sql
+```
+
+Regenerate and verify the bundle after editing migration files:
+
+```bash
+npm run supabase:bundle-sql
+npm run supabase:bundle-sql:check
 ```
 
 The compatibility migration converts these early boolean columns to SQLite-compatible integer flags:
@@ -182,6 +190,7 @@ Generated image assets are cloud-ready when `APP_STORAGE_PROVIDER=supabase`: wri
 npm run build
 npm run db:check-production
 npm audit --omit=dev --audit-level=high
+npm run supabase:bundle-sql:check
 ```
 
 Optional broader checks:

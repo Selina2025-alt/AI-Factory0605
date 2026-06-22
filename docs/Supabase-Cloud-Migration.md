@@ -50,11 +50,10 @@ Note: `ACF_BOOTSTRAP_EMAIL` and `ACF_BOOTSTRAP_PASSWORD` remain required for fre
 ## Minimum Production Path
 
 1. Create a Supabase project.
-2. Run SQL migration `202606050001_initial_ai_factory_schema.sql`.
-3. Run follow-up migrations `202606050002_sqlite_integer_flags_compatibility.sql` and `202606180001_lock_down_public_data_api.sql` in order.
-4. Configure Vercel Environment Variables.
-5. Deploy the GitHub repository on Vercel.
-6. Test login, monitor categories, collection, analysis, topic library, batch generation and content library.
+2. Run `supabase/ai_factory_supabase_go_live.sql` in Supabase SQL Editor.
+3. Configure Vercel Environment Variables.
+4. Deploy the GitHub repository on Vercel.
+5. Test login, monitor categories, collection, analysis, topic library, batch generation and content library.
 
 ## Environment Variables
 
@@ -176,6 +175,7 @@ Local:
 npm run lint
 npm run build
 npm audit --omit=dev --audit-level=high
+npm run supabase:bundle-sql:check
 npm run db:check-production
 ```
 

@@ -8,6 +8,8 @@
     "start": "next start",
     "analysis:daily": "tsx scripts/run-daily-analysis.ts",
     "db:check-production": "tsx scripts/check-production-db-config.ts",
+    "supabase:bundle-sql": "tsx scripts/build-supabase-go-live-sql.ts",
+    "supabase:bundle-sql:check": "tsx scripts/build-supabase-go-live-sql.ts --check",
     "lint": "eslint .",
     "test": "vitest run"
   },
