@@ -26,6 +26,7 @@ The current MVP keeps local development on SQLite by default, and supports produ
 - `docs/Multi-User-Persistence-Phase1.md`
 - `docs/Supabase-Cloud-Migration.md`
 - `docs/Supabase-Postgres-Phase1.md`
+- `docs/Vercel-Supabase-Go-Live-Runbook.md`
 
 ## Requirements
 
@@ -69,16 +70,14 @@ Production URL: https://ai-factory0605.vercel.app
 GitHub target: https://github.com/Selina2025-alt/AI-Factory0605.git
 ```
 
-As of 2026-06-18, the Vercel project has been created, linked and production deployed successfully. The login page returns 200 and protected app pages redirect to `/login`. Runtime data APIs still require the private Supabase values and private bootstrap admin credentials below before the app can be used end-to-end online:
+As of 2026-06-22, the Vercel project has been created, linked and production deployed successfully. The login page returns 200 and protected app pages redirect to `/login`. The current `ai-factory0605` production deployment has private bootstrap admin credentials configured in Vercel. Runtime data APIs still require the private Supabase database values below before the app can be used end-to-end online:
 
 ```text
 DATABASE_URL
 SUPABASE_SERVICE_ROLE_KEY
-ACF_BOOTSTRAP_EMAIL
-ACF_BOOTSTRAP_PASSWORD
 ```
 
-Do not use placeholder values for these variables. Add the real values in Vercel Project Settings, run the Supabase SQL migrations, then redeploy.
+Do not use placeholder values for these variables. Add the real values in Vercel Project Settings, run the Supabase SQL migrations, then redeploy. For fresh Vercel projects, also configure private `ACF_BOOTSTRAP_EMAIL` and `ACF_BOOTSTRAP_PASSWORD` values before online usage.
 
 Cloud readiness endpoint:
 
@@ -87,6 +86,12 @@ GET /api/health/cloud
 ```
 
 This endpoint is intentionally accessible before login and returns only configuration status, never secret values. Use it after deployment to confirm whether Vercel env vars, Supabase REST/Data API and the `assets` bucket are ready.
+
+Production go-live runbook:
+
+```text
+docs/Vercel-Supabase-Go-Live-Runbook.md
+```
 
 ### 1. Supabase SQL
 

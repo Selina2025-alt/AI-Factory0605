@@ -21,12 +21,13 @@ Completed:
 13. Vercel project `ai-factory0605` has been created and linked to the local project.
 14. Production deployment to `https://ai-factory0605.vercel.app` succeeds after marking runtime-data pages dynamic and using Vercel's default `.next` output directory.
 
-Current live smoke status:
+Current live smoke status as of 2026-06-22:
 
 1. `/login` returns 200.
 2. `/` redirects to `/login?next=%2F` for unauthenticated users.
 3. `/api/health/cloud` is available before login and reports missing cloud configuration without exposing secret values.
-4. Data APIs currently return server errors until `DATABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, private bootstrap credentials and Supabase SQL migrations are completed.
+4. The current `ai-factory0605` Vercel project has private bootstrap admin credentials configured.
+5. Data APIs are still blocked until real `DATABASE_URL`, real `SUPABASE_SERVICE_ROLE_KEY` and Supabase SQL migrations are completed.
 
 Still pending for later phases:
 
@@ -40,9 +41,11 @@ Still pending before the production MVP is usable end-to-end:
 
 1. Add real `DATABASE_URL` to Vercel Production.
 2. Add real `SUPABASE_SERVICE_ROLE_KEY` to Vercel Production.
-3. Add private `ACF_BOOTSTRAP_EMAIL` and `ACF_BOOTSTRAP_PASSWORD` to Vercel Production.
-4. Run all Supabase SQL migrations in the Supabase SQL Editor.
-5. Redeploy after adding those private values.
+3. Run all Supabase SQL migrations in the Supabase SQL Editor.
+4. Redeploy after adding those private values.
+5. Confirm `/api/health/cloud` returns `ready`.
+
+Note: `ACF_BOOTSTRAP_EMAIL` and `ACF_BOOTSTRAP_PASSWORD` remain required for fresh deployments. They are already configured for the current `ai-factory0605` Vercel project and must never be committed.
 
 ## Minimum Production Path
 

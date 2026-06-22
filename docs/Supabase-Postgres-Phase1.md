@@ -23,7 +23,7 @@ Not completed in this phase:
 2. Per-user encrypted API-key storage in database.
 3. Optional Storage-backed implementation for custom uploaded/GitHub-installed skill files.
 4. Long-running background job queue beyond current Vercel-compatible API/Cron structure.
-5. Final online runtime verification, because `DATABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and private bootstrap credentials are not yet configured in Vercel.
+5. Final online runtime verification, because real `DATABASE_URL`, real `SUPABASE_SERVICE_ROLE_KEY` and Supabase SQL execution still need to be completed for the live Vercel project.
 
 ## Runtime Switch
 
