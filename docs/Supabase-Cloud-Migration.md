@@ -142,8 +142,9 @@ It checks:
 1. Required Vercel environment variable names are present.
 2. Supabase database/storage switches are set.
 3. Bootstrap admin credentials are not missing and do not use the local defaults.
-4. Supabase REST/Data API can read `auth_users` with service-role access.
-5. Supabase Storage bucket `assets` is reachable.
+4. `DATABASE_URL` can connect to Supabase Postgres and run a lightweight `select 1`.
+5. Supabase REST/Data API can read `auth_users` with service-role access.
+6. Supabase Storage bucket `assets` is reachable.
 
 The endpoint reports only status and missing variable names. It never returns secret values.
 
@@ -174,6 +175,7 @@ Local:
 ```bash
 npm run lint
 npm run build
+npm audit --omit=dev --audit-level=high
 npm run db:check-production
 ```
 

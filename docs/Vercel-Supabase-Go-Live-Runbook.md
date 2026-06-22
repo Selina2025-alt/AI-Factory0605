@@ -26,6 +26,8 @@ Missing: DATABASE_URL, SUPABASE_SERVICE_ROLE_KEY
 
 Do not paste real secrets into chat, Git commits, screenshots, issue comments, or documentation.
 
+Once `DATABASE_URL` is set, this endpoint performs a direct Supabase Postgres connection probe and runs `select 1`. Once `SUPABASE_SERVICE_ROLE_KEY` is set, it also probes Supabase REST/Data API and the `assets` Storage bucket.
+
 ## Step 1: Run Supabase SQL
 
 Open the Supabase project SQL Editor and run these files in order:
@@ -92,6 +94,17 @@ Expected success:
 ```
 
 If it is not ready, read the `checks` array. The endpoint only returns missing variable names and probe statuses; it does not return secret values.
+
+Expected check IDs when fully configured:
+
+```text
+required-env
+runtime-provider
+bootstrap-credentials
+supabase-postgres
+supabase-rest
+supabase-storage
+```
 
 ## Step 5: Online Smoke Test
 

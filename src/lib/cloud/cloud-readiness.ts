@@ -4,6 +4,7 @@ import {
   getSupabaseRuntimeConfig,
   type SupabaseRuntimeConfig
 } from "@/lib/supabase/config";
+import { probePostgresDatabase } from "@/lib/supabase/postgres-probe";
 
 export type CloudReadinessStatus = "ready" | "blocked";
 export type CloudReadinessCheckStatus = "ok" | "warning" | "error" | "skipped";
@@ -228,6 +229,33 @@ async function probeSupabaseStorage(config: SupabaseRuntimeConfig): Promise<Clou
   });
 }
 
+async function probePostgres(): Promise<CloudReadinessCheck> {
+  const result = await probePostgresDatabase();
+
+  if (result.ok) {
+    return createCheck({
+      id: "supabase-postgres",
+      label: "Supabase Postgres DATABASE_URL",
+      status: "ok",
+      message: "DATABASE_URL can connect to Supabase Postgres and run a lightweight query.",
+      details: result.summary ? { connection: result.summary } : undefined
+    });
+  }
+
+  return createCheck({
+    id: "supabase-postgres",
+    label: "Supabase Postgres DATABASE_URL",
+    status: hasEnv("DATABASE_URL") ? "error" : "skipped",
+    message: hasEnv("DATABASE_URL")
+      ? "DATABASE_URL probe failed. Check the Supabase pooler connection string, password and SSL settings."
+      : "DATABASE_URL probe was skipped because DATABASE_URL is missing.",
+    details: {
+      ...(result.summary ? { connection: result.summary } : {}),
+      error: result.error
+    }
+  });
+}
+
 async function buildSupabaseProbeChecks(enabled: boolean) {
   const config = getSupabaseRuntimeConfig();
 
@@ -242,8 +270,11 @@ async function buildSupabaseProbeChecks(enabled: boolean) {
     ];
   }
 
+  const postgresCheck = await probePostgres();
+
   if (!config) {
     return [
+      postgresCheck,
       createCheck({
         id: "supabase-probes",
         label: "Supabase runtime probes",
@@ -255,9 +286,13 @@ async function buildSupabaseProbeChecks(enabled: boolean) {
   }
 
   try {
-    return await Promise.all([probeSupabaseTable(config), probeSupabaseStorage(config)]);
+    return [
+      postgresCheck,
+      ...(await Promise.all([probeSupabaseTable(config), probeSupabaseStorage(config)]))
+    ];
   } catch (error) {
     return [
+      postgresCheck,
       createCheck({
         id: "supabase-probes",
         label: "Supabase runtime probes",

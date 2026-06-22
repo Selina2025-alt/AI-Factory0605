@@ -87,6 +87,11 @@ GET /api/health/cloud
 
 This endpoint is intentionally accessible before login and returns only configuration status, never secret values. Use it after deployment to confirm whether Vercel env vars, Supabase REST/Data API and the `assets` bucket are ready.
 
+The health check validates both Supabase access paths:
+
+1. `DATABASE_URL` direct Postgres connectivity through a lightweight `select 1`.
+2. Supabase REST/Data API and Storage access through `SUPABASE_SERVICE_ROLE_KEY`.
+
 Production go-live runbook:
 
 ```text
@@ -192,6 +197,7 @@ Current verified gates for this cloudization phase:
 ```bash
 npm run lint
 npm run build
+npm audit --omit=dev --audit-level=high
 npm run test -- src/lib/__tests__/analysis-scheduler.test.ts
 npm run test -- src/app/api/tasks/[taskId]/export/__tests__/route.test.ts
 npm run test -- src/app/api/tasks/[taskId]/publish/__tests__/route.test.ts

@@ -1,5 +1,21 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+const pgMocks = vi.hoisted(() => ({
+  connect: vi.fn(),
+  query: vi.fn(),
+  end: vi.fn()
+}));
+
+vi.mock("pg", () => ({
+  Client: vi.fn().mockImplementation(function MockPgClient() {
+    return {
+      connect: pgMocks.connect,
+      query: pgMocks.query,
+      end: pgMocks.end
+    };
+  })
+}));
+
 import {
   assertSafeSupabaseBootstrapCredentials,
   getCloudReadinessReport,
@@ -43,7 +59,10 @@ describe("cloud readiness", () => {
   beforeEach(() => {
     process.env = { ...originalEnv };
     clearCloudEnv();
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
+    pgMocks.connect.mockResolvedValue(undefined);
+    pgMocks.query.mockResolvedValue({ rows: [{ ok: 1 }] });
+    pgMocks.end.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -86,9 +105,31 @@ describe("cloud readiness", () => {
     const report = await getCloudReadinessReport({ probeSupabase: true });
 
     expect(report.status).toBe("ready");
+    expect(pgMocks.connect).toHaveBeenCalledTimes(1);
+    expect(pgMocks.query).toHaveBeenCalledWith("select 1 as ok");
     expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(report.checks.find((check) => check.id === "supabase-postgres")?.status).toBe("ok");
     expect(report.checks.find((check) => check.id === "supabase-rest")?.status).toBe("ok");
     expect(report.checks.find((check) => check.id === "supabase-storage")?.status).toBe("ok");
+  });
+
+  it("blocks readiness when DATABASE_URL cannot connect without leaking the connection string", async () => {
+    setReadyEnv();
+    pgMocks.connect.mockRejectedValueOnce(
+      new Error(`connect failed for ${process.env.DATABASE_URL}`)
+    );
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response("[]", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const report = await getCloudReadinessReport({ probeSupabase: true });
+    const postgresCheck = report.checks.find((check) => check.id === "supabase-postgres");
+
+    expect(report.status).toBe("blocked");
+    expect(postgresCheck?.status).toBe("error");
+    expect(JSON.stringify(report)).not.toContain("password@example.supabase.co");
+    expect(JSON.stringify(report)).toContain("<redacted>");
   });
 
   it("blocks Supabase bootstrap when local default credentials are still used", () => {

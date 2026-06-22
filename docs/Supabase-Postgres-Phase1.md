@@ -174,13 +174,14 @@ Generated image assets are cloud-ready when `APP_STORAGE_PROVIDER=supabase`: wri
 6. Use Vercel Cron from `vercel.json` for daily analysis; the UI analysis time is a stored preference, while production schedule changes require editing `vercel.json` and redeploying.
 7. Protect `/api/cron/daily-analysis` with `CRON_SECRET`.
 8. If Vercel reports a missing `.next` output directory, confirm the deployed commit includes the `process.env.VERCEL === "1"` branch in `next.config.ts`.
-9. Confirm `/api/health/cloud` returns `ready` before validating business workflows.
+9. Confirm `/api/health/cloud` returns `ready` before validating business workflows. The health check uses `DATABASE_URL` for a direct Postgres `select 1`, and uses `SUPABASE_SERVICE_ROLE_KEY` for REST/Data API and Storage probes.
 
 ## Local Verification
 
 ```bash
 npm run build
 npm run db:check-production
+npm audit --omit=dev --audit-level=high
 ```
 
 Optional broader checks:
